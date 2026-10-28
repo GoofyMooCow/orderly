@@ -1,0 +1,2768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Orderly</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="icon" href="/favicon-light.png" media="(prefers-color-scheme: light)">
+  <link rel="icon" href="/favicon-dark.png" media="(prefers-color-scheme: dark)">
+
+
+  <style>
+      :root {
+          --bg: #f8fafc;
+          --text: #00205c;
+          --sidebar-bg: #1e3a8a;
+      }
+
+      .dark {
+          --bg: #0f172a;
+          --text: #f1f5f9;
+          --sidebar-bg: #1e293b;
+      }
+
+      * {
+          box-sizing: border-box;
+          transition: background .3s, color .3s;
+      }
+
+      body {
+          margin: 0;
+          font-family: Arial, sans-serif;
+          background: linear-gradient(135deg, #4b79a1, #283e51);
+          min-height: 100vh;
+          min-height: 100dvh;
+          height: 100vh;
+          height: 100dvh;
+          overflow: hidden;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          color: #fff;
+      }
+
+      /* ---------- Auth Card ---------- */
+      .card {
+          background: rgba(255, 255, 255, 0.12);
+          padding: 30px;
+          border-radius: 12px;
+          width: 350px;
+          backdrop-filter: blur(10px);
+          box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+          animation: fadeIn 0.4s ease;
+      }
+
+      @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+      }
+
+      h2 {
+          text-align: center;
+          margin-bottom: 20px;
+          font-weight: 600;
+      }
+
+      input {
+          width: 100%;
+          padding: 12px;
+          margin: 8px 0 15px;
+          border: none;
+          border-radius: 8px;
+          outline: none;
+          font-size: 15px;
+      }
+
+      #submitBtn {
+          width: 100%;
+          padding: 12px;
+          background: #00c6ff;
+          border: none;
+          border-radius: 8px;
+          font-size: 16px;
+          color: #000;
+          cursor: pointer;
+          transition: 0.2s;
+          margin: 8px 0;
+      }
+
+      #submitBtn:hover {
+          background: #00a4d4;
+      }
+
+      .toggle {
+          text-align: center;
+          margin-top: 15px;
+          cursor: pointer;
+          color: #cceaff;
+          font-size: 14px;
+      }
+
+      .toggle:hover {
+          text-decoration: underline;
+      }
+
+      #message {
+          margin-top: 15px;
+          text-align: center;
+          font-size: 14px;
+          min-height: 20px;
+      }
+
+      /* ---------- App Shell (sidebar + content) ---------- */
+      #app {
+          display: none;            /* hidden until login succeeds */
+          min-height: 100vh;
+          min-height: 100dvh;
+          height: 100vh;
+          height: 100dvh;
+          width: 100%;
+          font-family: system-ui, sans-serif;
+          color: initial;           /* reset the white text from body */
+          overflow: hidden;
+          box-sizing: border-box;
+      }
+
+      #app.visible {
+          display: flex;
+      }
+
+      .sidebar {
+          width: 260px;
+          background: var(--sidebar-bg);
+          color: #e0e7ff;
+          padding: 20px 16px 12px;
+          flex-shrink: 0;
+          display: flex;
+          flex-direction: column;
+          height: 100vh;
+          height: 100dvh;
+          max-height: 100vh;
+          max-height: 100dvh;
+          overflow: hidden;
+          box-sizing: border-box;
+      }
+
+      .sidebar .logo-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 18px;
+      }
+
+      .sidebar .logo {
+          font-size: 1.25rem;
+          font-weight: 600;
+          color: #fff;
+      }
+
+      .bell-wrap { position: relative; }
+
+      .bell-btn {
+          background: none;
+          border: none;
+          color: #cdd9ff;
+          cursor: pointer;
+          font-size: 18px;
+          padding: 6px;
+          border-radius: 8px;
+          position: relative;
+          line-height: 1;
+      }
+      .bell-btn:hover { background: #2c4ea8; color: #fff; }
+      .bell-icon { display: block; pointer-events: none; }
+
+      .bell-badge {
+          position: absolute;
+          top: 0;
+          right: 0;
+          background: #ef4444;
+          color: #fff;
+          font-size: 10px;
+          font-weight: 700;
+          border-radius: 10px;
+          min-width: 16px;
+          height: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 3px;
+      }
+
+      .notif-panel {
+          position: absolute;
+          top: 38px;
+          left: 0;
+          width: 320px;
+          max-height: 420px;
+          overflow-y: auto;
+          background: var(--bg);
+          color: var(--text);
+          border-radius: 10px;
+          box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+          z-index: 150;
+          display: none;
+      }
+      .notif-panel.visible { display: block; }
+      .notif-panel-header {
+          padding: 12px 14px;
+          font-weight: 600;
+          font-size: 13.5px;
+          border-bottom: 1px solid rgba(120,140,200,0.18);
+      }
+      .notif-item {
+          padding: 12px 14px;
+          border-bottom: 1px solid rgba(120,140,200,0.12);
+          font-size: 13px;
+      }
+      .notif-item:last-child { border-bottom: none; }
+      .notif-text { margin-bottom: 6px; line-height: 1.4; }
+      .notif-time { font-size: 11px; opacity: .55; margin-bottom: 8px; }
+      .notif-actions { display: flex; gap: 6px; }
+      .notif-status {
+          font-size: 11.5px;
+          font-weight: 600;
+          padding: 2px 0;
+      }
+      .notif-status.accepted { color: #16a34a; }
+      .notif-status.denied { color: #dc2626; }
+      .notif-empty { padding: 24px 14px; text-align: center; opacity: .55; font-size: 13px; }
+
+      .sidebar .top-actions {
+          display: flex;
+          gap: 6px;
+          margin-bottom: 20px;
+      }
+
+      .sidebar .top-actions button {
+          flex: 1;
+          background: #2c4ea8;
+          color: #fff;
+          border: none;
+          border-radius: 6px;
+          padding: 8px 6px;
+          font-size: 12px;
+          cursor: pointer;
+          transition: background .15s;
+      }
+
+      .sidebar .top-actions button:hover { background: #3b5fc7; }
+
+      .sidebar nav {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          overflow-y: auto;
+          flex: 1;
+          min-height: 0;
+      }
+
+      .sidebar nav a {
+          color: #c7d2fe;
+          text-decoration: none;
+          padding: 10px 12px;
+          border-radius: 6px;
+          transition: background 0.15s, color 0.15s;
+      }
+
+      .sidebar nav a:hover {
+          background: #2c4ea8;
+          color: #fff;
+      }
+
+      .my-tasks-link, .calendar-link, .settings-link {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-weight: 500;
+          margin-bottom: 6px;
+      }
+
+      .my-tasks-link.active, .calendar-link.active, .settings-link.active { background: #3b5fc7; color: #fff; }
+
+      .nav-section-label {
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: .05em;
+          color: #8ea2e0;
+          margin: 16px 0 6px 8px;
+      }
+
+      .proj-item { margin-bottom: 4px; }
+
+      .proj-header {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding: 8px 6px 8px 4px;
+          border-radius: 6px;
+          cursor: default;
+          color: #e0e7ff;
+      }
+
+      .proj-header:hover { background: #2c4ea8; }
+
+      .collapse-btn {
+          background: none;
+          border: none;
+          color: #c7d2fe;
+          cursor: pointer;
+          font-size: 11px;
+          width: 18px;
+          height: 18px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          transition: transform .15s;
+      }
+      .proj-item.collapsed .collapse-btn { transform: rotate(-90deg); }
+
+      .proj-header .proj-name {
+          flex: 1;
+          font-weight: 500;
+          font-size: 14px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+      }
+
+      .proj-header .member-count {
+          font-size: 11px;
+          color: #a8b8ec;
+      }
+
+      .icon-btn {
+          background: none;
+          border: none;
+          color: #c7d2fe;
+          cursor: pointer;
+          font-size: 13px;
+          padding: 2px 5px;
+          border-radius: 4px;
+      }
+
+      .icon-btn:hover { background: #3b5fc7; color: #fff; }
+      .icon-btn.danger:hover { background: #b91c1c; color: #fff; }
+
+      .proj-lists {
+          padding-left: 18px;
+          display: flex;
+          flex-direction: column;
+      }
+      .proj-item.collapsed .proj-lists { display: none; }
+
+      .list-link {
+          color: #c7d2fe;
+          text-decoration: none;
+          padding: 7px 10px;
+          border-radius: 6px;
+          font-size: 13.5px;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+      }
+
+      .list-link:hover { background: #2c4ea8; color: #fff; }
+      .list-link.active { background: #3b5fc7; color: #fff; font-weight: 500; }
+
+      .add-list-link {
+          color: #8ea2e0;
+          font-size: 12px;
+          padding: 6px 10px;
+          text-decoration: none;
+          display: inline-block;
+      }
+      .add-list-link:hover { color: #fff; }
+
+      .shared-tag {
+          font-size: 10px;
+          background: rgba(255,255,255,0.15);
+          padding: 1px 5px;
+          border-radius: 4px;
+          margin-left: 4px;
+      }
+
+      .profile-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding-top: 14px;
+          margin-top: auto;
+          margin-bottom: 8px;
+          border-top: 1px solid rgba(255,255,255,0.12);
+          flex-shrink: 0;
+      }
+      .profile-row .profile-name {
+          flex: 1;
+          font-size: 13.5px;
+          font-weight: 500;
+          color: #e0e7ff;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+      }
+
+      .logout-link { flex-shrink: 0; padding-bottom: max(4px, env(safe-area-inset-bottom)); }
+      .logout-link a { color: #a8b8ec; font-size: 12px; text-decoration: none; }
+      .logout-link a:hover { color: #fff; }
+
+      .content {
+          flex: 1;
+          background: var(--bg);
+          padding: 32px;
+          color: var(--text);
+          overflow-y: auto;
+          min-height: 0;
+          height: 100vh;
+          height: 100dvh;
+          box-sizing: border-box;
+      }
+
+      /* ---------- Views ---------- */
+      .view { display: none; }
+      .view.active { display: block; }
+
+      .welcome-box { text-align: center; margin-top: 70px; }
+      .welcome-box h2 { opacity: .85; }
+      .welcome-box p { opacity: .65; margin-bottom: 26px; }
+      .welcome-actions { display: flex; gap: 10px; justify-content: center; }
+
+      .content-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 24px;
+          flex-wrap: wrap;
+          gap: 12px;
+      }
+
+      .content-header h1 { margin: 0 0 4px; font-size: 1.6rem; }
+      .breadcrumb { font-size: 13px; opacity: .65; }
+
+      .members-row { display: flex; align-items: center; margin-top: 10px; }
+
+      .avatar {
+          width: 30px;
+          height: 30px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #fff;
+          font-size: 12px;
+          font-weight: 600;
+          margin-left: -8px;
+          border: 2px solid var(--bg);
+          flex-shrink: 0;
+      }
+      .avatar:first-child { margin-left: 0; }
+
+      .header-actions { display: flex; gap: 8px; align-items: flex-start; }
+
+      .btn {
+          border: none;
+          border-radius: 6px;
+          padding: 9px 14px;
+          font-size: 13.5px;
+          cursor: pointer;
+          font-weight: 500;
+          transition: .15s;
+      }
+      .btn-primary { background: #1e3a8a; color: #fff; }
+      .btn-primary:hover { background: #162d6b; }
+      .btn-secondary { background: #e2e8f0; color: #1e293b; }
+      .dark .btn-secondary { background: #334155; color: #f1f5f9; }
+      .btn-secondary:hover { background: #cbd5e1; }
+      .btn-danger { background: transparent; color: #dc2626; }
+      .btn-danger:hover { background: #fee2e2; }
+      .btn-small { padding: 6px 10px; font-size: 12px; }
+
+      .add-task-bar {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 20px;
+          flex-wrap: wrap;
+          background: rgba(120,140,200,0.08);
+          padding: 12px;
+          border-radius: 10px;
+      }
+      .add-task-bar input[type="text"] { flex: 2; min-width: 160px; }
+      .add-task-bar input, .add-task-bar select {
+          padding: 9px 10px;
+          border: 1px solid #cbd5e1;
+          border-radius: 6px;
+          font-size: 13.5px;
+          background: #fff;
+          color: #1e293b;
+          margin: 0;
+      }
+      .add-task-bar input[type="time"] { width: 110px; }
+      .dark .add-task-bar input, .dark .add-task-bar select {
+          background: #1e293b;
+          color: #f1f5f9;
+          border-color: #334155;
+      }
+
+      .task-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+
+      .task-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 11px 14px;
+          background: rgba(120,140,200,0.07);
+          border-radius: 8px;
+          transition: opacity .2s;
+      }
+      .task-item.completed { opacity: .55; }
+      .task-item.completed .task-name { text-decoration: line-through; }
+
+      .task-checkbox {
+          width: 19px;
+          height: 19px;
+          border-radius: 50%;
+          border: 2px solid #1e3a8a;
+          cursor: pointer;
+          flex-shrink: 0;
+          appearance: none;
+          -webkit-appearance: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0;
+      }
+      .dark .task-checkbox { border-color: #93c5fd; }
+      .task-checkbox:checked { background: #1e3a8a; border-color: #1e3a8a; }
+      .task-checkbox:checked::after { content: "✓"; color: #fff; font-size: 12px; }
+
+      .task-name { flex: 1; font-size: 14.5px; cursor: pointer; }
+
+      .priority-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+      .priority-low { background: #22c55e; }
+      .priority-normal { background: #3b82f6; }
+      .priority-high { background: #ef4444; }
+
+      .deadline-badge {
+          font-size: 11.5px;
+          padding: 3px 8px;
+          border-radius: 5px;
+          background: #e2e8f0;
+          color: #475569;
+          white-space: nowrap;
+      }
+      .dark .deadline-badge { background: #334155; color: #cbd5e1; }
+      .deadline-badge.overdue { background: #fee2e2; color: #b91c1c; font-weight: 600; }
+      .dark .deadline-badge.overdue { background: #7f1d1d; color: #fecaca; }
+      .deadline-badge.dueToday { background: #ebfee2; color: #43b91c; font-weight: 600; }
+      .dark .deadline-badge.dueToday { background: #367f1d; color: #d4feca; }
+
+      .repeat-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          font-size: 11.5px;
+          padding: 3px 8px;
+          border-radius: 5px;
+          background: #dbeafe;
+          color: #1d4ed8;
+          white-space: nowrap;
+          font-weight: 600;
+      }
+      .dark .repeat-badge { background: #1e3a8a; color: #dbeafe; }
+
+      .add-task-bar #newTaskRepeat { flex: 1; min-width: 190px; }
+
+      .assignee-chip {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          font-size: 12px;
+          background: #e2e8f0;
+          color: #334155;
+          padding: 3px 8px 3px 3px;
+          border-radius: 14px;
+          white-space: nowrap;
+      }
+      .dark .assignee-chip { background: #334155; color: #e2e8f0; }
+      .assignee-chip .avatar { width: 18px; height: 18px; font-size: 9px; margin: 0; border: none; }
+
+      .task-actions { display: flex; gap: 4px; }
+
+      .empty-state { text-align: center; opacity: .55; padding: 40px 0; font-size: 14px; }
+
+      .mytask-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 14px;
+          background: rgba(120,140,200,0.07);
+          border-radius: 8px;
+          margin-bottom: 6px;
+          cursor: pointer;
+      }
+      .mytask-row:hover { background: rgba(120,140,200,0.14); }
+      .mytask-list-tag { font-size: 11.5px; opacity: .6; }
+
+      /* ---------- Settings ---------- */
+      .settings-card {
+          background: rgba(120,140,200,0.07);
+          border-radius: 12px;
+          padding: 18px 20px 10px;
+          margin-bottom: 18px;
+          max-width: 760px;
+      }
+      .settings-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 2px; }
+      .settings-sub { font-size: 12.5px; opacity: .65; margin-bottom: 6px; }
+      .settings-subhead { font-weight: 600; font-size: 14px; margin: 16px 0 4px; padding-top: 14px; border-top: 1px solid rgba(120,140,200,.18); }
+      .settings-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          padding: 12px 0;
+          border-top: 1px solid rgba(120,140,200,.18);
+      }
+      .settings-label { flex: 1; min-width: 0; font-size: 14px; }
+      .settings-hint { font-size: 12px; opacity: .65; margin-top: 2px; line-height: 1.45; }
+      .settings-control { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+      .settings-control select,
+      .settings-control input[type="time"],
+      .settings-control input[type="email"],
+      .settings-control input[type="text"],
+      .copy-row input {
+          width: auto;
+          margin: 0;
+          padding: 8px 10px;
+          border: 1px solid #cbd5e1;
+          border-radius: 6px;
+          font-size: 13.5px;
+          background: #fff;
+          color: #1e293b;
+          max-width: 100%;
+      }
+      .dark .settings-control select,
+      .dark .settings-control input[type="time"],
+      .dark .settings-control input[type="email"],
+      .dark .settings-control input[type="text"],
+      .dark .copy-row input { background: #1e293b; color: #f1f5f9; border-color: #334155; }
+      .settings-row.stack { flex-direction: column; align-items: stretch; gap: 8px; }
+      .settings-row.stack .settings-control { flex-wrap: wrap; flex-shrink: 1; }
+      .settings-row.stack .settings-control input { flex: 1; min-width: 200px; }
+      .settings-row.is-disabled { opacity: .45; }
+      .settings-callout {
+          background: #fef3c7; color: #92400e; border-radius: 8px;
+          padding: 10px 12px; font-size: 13px; margin: 10px 0 4px; line-height: 1.45;
+      }
+      .dark .settings-callout { background: #78350f; color: #fde68a; }
+      .pill { font-size: 11.5px; padding: 3px 8px; border-radius: 999px; font-weight: 600; margin-left: 6px; }
+      .pill-ok { background: #dcfce7; color: #166534; }
+      .dark .pill-ok { background: #14532d; color: #bbf7d0; }
+      .pill-warn { background: #fef3c7; color: #92400e; }
+      .dark .pill-warn { background: #78350f; color: #fde68a; }
+      .link-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 12px; }
+      .link-buttons a { text-decoration: none; display: inline-block; color: inherit; }
+      .link-buttons a.btn-primary { color: #fff; }
+      .link-buttons a.btn-secondary { color: #1e293b; }
+      .dark .link-buttons a.btn-secondary { color: #f1f5f9; }
+      .copy-row { display: flex; gap: 8px; margin: 6px 0 10px; }
+      .copy-row input { flex: 1; min-width: 0; font-size: 12.5px; }
+      .link-btn { background: none; border: none; color: inherit; text-decoration: underline; cursor: pointer; padding: 0; font-size: inherit; }
+      .btn:disabled { opacity: .55; cursor: not-allowed; }
+      #settingsSaved { font-size: 13px; opacity: 0; transition: opacity .3s; align-self: center; }
+      #settingsSaved.show { opacity: .85; }
+
+      .switch { position: relative; display: inline-block; width: 42px; height: 24px; flex-shrink: 0; }
+      .switch input { opacity: 0; width: 0; height: 0; margin: 0; padding: 0; position: absolute; }
+      .slider { position: absolute; inset: 0; background: #cbd5e1; border-radius: 24px; cursor: pointer; transition: .2s; }
+      .slider::before {
+          content: ""; position: absolute; height: 18px; width: 18px; left: 3px; top: 3px;
+          background: #fff; border-radius: 50%; transition: .2s;
+      }
+      .switch input:checked + .slider { background: #1e3a8a; }
+      .dark .switch input:checked + .slider { background: #3b82f6; }
+      .switch input:checked + .slider::before { transform: translateX(18px); }
+      .switch input:focus-visible + .slider { outline: 2px solid #3b82f6; outline-offset: 2px; }
+      .switch input:disabled + .slider { cursor: not-allowed; }
+      .calendar-task-chip.calendar-done { text-decoration: line-through; opacity: .6; }
+
+      /* ---------- Sort menu ---------- */
+      .sort-wrap { position: relative; }
+      .sort-btn {
+          background: #e2e8f0;
+          color: #1e293b;
+          border: none;
+          border-radius: 6px;
+          width: 34px;
+          height: 34px;
+          font-size: 16px;
+          line-height: 1;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+      }
+      .dark .sort-btn { background: #334155; color: #f1f5f9; }
+      .sort-btn:hover { background: #cbd5e1; }
+      .dark .sort-btn:hover { background: #475569; }
+
+      .sort-menu {
+          position: absolute;
+          top: 40px;
+          right: 0;
+          min-width: 190px;
+          background: var(--bg);
+          color: var(--text);
+          border-radius: 10px;
+          box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+          z-index: 150;
+          display: none;
+          overflow: hidden;
+          padding: 6px;
+      }
+      .sort-menu.visible { display: block; }
+      .sort-menu-label {
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: .04em;
+          opacity: .55;
+          padding: 8px 10px 4px;
+      }
+      .sort-option {
+          padding: 9px 10px;
+          font-size: 13.5px;
+          border-radius: 6px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+      }
+      .sort-option:hover { background: rgba(120,140,200,0.14); }
+      .sort-option.active { font-weight: 600; color: #1e3a8a; }
+      .dark .sort-option.active { color: #93c5fd; }
+      .sort-option .check { opacity: 0; font-size: 12px; }
+      .sort-option.active .check { opacity: 1; }
+
+      /* ---------- Modal ---------- */
+      .modal-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0,0,0,0.45);
+          display: none;
+          align-items: center;
+          justify-content: center;
+          z-index: 100;
+      }
+      .modal-overlay.visible { display: flex; }
+      .modal-box {
+          background: var(--bg);
+          color: var(--text);
+          border-radius: 12px;
+          padding: 24px;
+          width: 340px;
+          box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+      }
+      .modal-box h3 { margin: 0 0 16px; }
+      .field { margin-bottom: 14px; }
+      .field label { display: block; font-size: 12.5px; margin-bottom: 5px; opacity: .75; }
+      .field input, .field select {
+          width: 100%;
+          padding: 9px 10px;
+          border: 1px solid #cbd5e1;
+          border-radius: 6px;
+          font-size: 14px;
+          background: #fff;
+          color: #1e293b;
+          margin: 0;
+      }
+      .field-row { display: flex; gap: 8px; }
+      .field-row .field { flex: 1; }
+      .dark .field input, .dark .field select { background: #1e293b; color: #f1f5f9; border-color: #334155; }
+      .modal-error { color: #dc2626; font-size: 12.5px; margin-bottom: 10px; min-height: 14px; }
+      .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+
+      /* ---------- Toasts ---------- */
+      #toastContainer {
+          position: fixed;
+          bottom: 16px;
+          right: 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          z-index: 200;
+      }
+      .toast {
+          background: #1e293b;
+          color: #fff;
+          padding: 11px 16px;
+          border-radius: 8px;
+          font-size: 13.5px;
+          box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+          animation: toastIn .25s ease;
+          max-width: 280px;
+      }
+      @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+      .mobile-rail {
+          display: none;
+      }
+      .sidebar-overlay {
+          display: none;
+          position: fixed;
+          inset: 0;
+          background: rgba(0,0,0,0.4);
+          z-index: 130;
+      }
+
+      /* ---------- Calendar view ---------- */
+      .calendar-grid {
+          display: grid;
+          grid-template-columns: repeat(7, 1fr);
+          gap: 6px;
+      }
+      .calendar-weekday {
+          font-size: 11.5px;
+          text-transform: uppercase;
+          letter-spacing: .04em;
+          opacity: .55;
+          text-align: center;
+          padding: 4px 0 8px;
+      }
+      .calendar-cell {
+          min-height: 92px;
+          background: rgba(120,140,200,0.07);
+          border-radius: 8px;
+          padding: 6px;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+      }
+      .calendar-cell.empty { background: transparent; }
+      .calendar-cell.today { box-shadow: inset 0 0 0 2px #1e3a8a; }
+      .dark .calendar-cell.today { box-shadow: inset 0 0 0 2px #93c5fd; }
+      .calendar-daynum { font-size: 12px; font-weight: 600; opacity: .7; }
+      .calendar-tasks { display: flex; flex-direction: column; gap: 3px; overflow: hidden; }
+      .calendar-task-chip {
+          font-size: 11px;
+          color: #fff;
+          padding: 3px 6px;
+          border-radius: 5px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+      }
+
+      .calendar-priority-low { background: #22c55e; }
+      .calendar-priority-low:hover { background: #15a649; }
+
+      .calendar-priority-normal { background: #3b82f6; }
+      .calendar-priority-normal:hover { background: #1e5fc3; }
+
+      .calendar-priority-high { background: #ef4444; }
+      .calendar-priority-high:hover { background: #bd2f2f; }
+
+      /* Later occurrences of a repeating task are slightly faded vs. the real due date */
+      .calendar-task-chip.calendar-future { opacity: .65; }
+
+      .calendar-task-icon { font-size: 10px; flex-shrink: 0; }
+      .calendar-more { font-size: 10.5px; opacity: .55; padding: 0 6px; }
+
+      /* ---------- Mobile layout ---------- */
+      @media (max-width: 768px) {
+          #app.visible { position: relative; }
+
+          .mobile-rail {
+              position: fixed;
+              top: 0;
+              left: 0;
+              width: 18px;
+              height: 100vh;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              background: var(--sidebar-bg);
+              border: none;
+              border-right: 1px solid rgba(255,255,255,0.08);
+              cursor: pointer;
+              z-index: 130;
+              padding: 0;
+          }
+          .mobile-rail span {
+              color: #fff;
+              font-size: 18px;
+              line-height: 1;
+              transform: translateX(-1px);
+          }
+
+          .sidebar {
+              position: fixed;
+              top: 0;
+              left: 0;
+              height: 100vh;
+              height: 100dvh;
+              width: 100%;
+              max-width: 320px;
+              z-index: 140;
+              transform: translateX(-100%);
+              transition: transform .25s ease;
+              box-shadow: 4px 0 18px rgba(0,0,0,0.3);
+          }
+          .sidebar.mobile-open { transform: translateX(0); }
+          .sidebar.mobile-open ~ .sidebar-overlay { display: block; }
+
+          .content {
+              padding: 18px 14px 80px 26px;
+              width: 100%;
+              height: 100vh;
+              height: 100dvh;
+              max-height: 100vh;
+              max-height: 100dvh;
+              box-sizing: border-box;
+          }
+
+          .content-header { flex-direction: column; align-items: stretch; }
+          .header-actions { flex-wrap: wrap; }
+
+          .add-task-bar { flex-direction: column; align-items: stretch; }
+          .add-task-bar input, .add-task-bar select { width: 100%; }
+          .add-task-bar input[type="time"] { width: 100%; }
+
+          .task-item { flex-wrap: wrap; }
+          .task-name { flex: 1 1 100%; order: 1; }
+          .task-checkbox { order: 0; }
+          .priority-dot { order: 0; }
+          .deadline-badge, .assignee-chip { order: 2; }
+          .task-actions { order: 3; margin-left: auto; }
+
+          .modal-box { width: 88vw; max-width: 360px; }
+          .field-row { flex-direction: column; }
+          .settings-row:not(.row-toggle) { flex-direction: column; align-items: stretch; gap: 8px; }
+          .settings-control { flex-shrink: 1; flex-wrap: wrap; }
+          .settings-control select, .settings-control input { width: 100%; }
+
+          #toastContainer { left: 8px; right: 8px; bottom: 8px; }
+          .toast { max-width: none; }
+
+          .notif-panel { width: 92vw; max-width: 340px; left: -8px; }
+
+          .sort-menu { left: 0; min-width: 170px; }
+
+          .calendar-cell { min-height: 64px; }
+          .calendar-weekday { font-size: 10px; padding: 2px 0 4px; }
+      }
+  </style>
+</head>
+
+<body>
+
+<div class="card" id="authCard">
+  <h2 id="formTitle">Sign In</h2>
+
+  <input id="username" type="text" placeholder="Username">
+  <input id="resetCode" type="text" inputmode="numeric" maxlength="12" placeholder="6-digit code from your email" autocomplete="one-time-code" style="display:none;">
+  <input id="password" type="password" placeholder="Password">
+  <input id="password2" type="password" placeholder="Verify Password" style="display:none;">
+  <input id="email" type="email" placeholder="Email (optional, for reminders)" autocomplete="email" style="display:none;">
+
+  <button id="submitBtn">Sign In</button>
+
+  <div class="toggle" id="toggleForm">Don't have an account? Sign Up</div>
+  <div class="toggle" id="forgotLink">Forgot password?</div>
+  <div class="toggle" id="resendLink" style="display:none;">Send a new code</div>
+
+  <div id="message"></div>
+</div>
+
+<div id="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="logo-row">
+      <div class="logo">Orderly</div>
+      <div class="bell-wrap">
+        <button class="bell-btn" id="bellBtn" title="Notifications">
+          <svg class="bell-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <span class="bell-badge" id="bellBadge" style="display:none;">0</span>
+        </button>
+        <div class="notif-panel" id="notifPanel">
+          <div class="notif-panel-header">Notifications</div>
+          <div id="notifList"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <button id="newProjectBtn">+ Project</button>
+      <button id="newListBtn">+ List</button>
+    </div>
+
+    <nav id="sidebarNav">
+      <a href="#" class="my-tasks-link" data-view="myTasks">My Tasks</a>
+      <a href="#" class="calendar-link" data-view="calendar">Calendar</a>
+      <a href="#" class="settings-link" data-view="settings">Settings</a>
+
+      <div class="nav-section-label">Projects</div>
+      <div id="projectsTree"></div>
+
+      <div class="nav-section-label">My Lists</div>
+      <div id="standaloneTree"></div>
+    </nav>
+
+    <div class="profile-row">
+      <span id="profileAvatar"></span>
+      <span class="profile-name" id="profileName"></span>
+    </div>
+    <div class="logout-link"><a href="#" id="logoutLink">Log out</a></div>
+  </aside>
+
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <main class="content">
+    <button class="mobile-rail" id="mobileMenuBtn" type="button" aria-label="Open menu">
+      <span>›</span>
+    </button>
+
+    <div id="welcomeView" class="view active">
+      <div class="welcome-box">
+        <h2>Welcome</h2>
+        <p>Select a list from the sidebar, or create a new project or list to get started.</p>
+        <div class="welcome-actions">
+          <button class="btn btn-primary" id="welcomeNewProjectBtn">+ New Project</button>
+          <button class="btn btn-secondary" id="welcomeNewListBtn">+ New List</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="myTasksView" class="view">
+      <div class="content-header">
+        <div>
+          <h1>My Tasks</h1>
+          <div class="breadcrumb">Everything assigned to you, across every list</div>
+        </div>
+      </div>
+      <div id="myTasksContainer"></div>
+    </div>
+
+    <div id="calendarView" class="view">
+      <div class="content-header">
+        <div>
+          <h1>Calendar</h1>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary btn-small" id="calPrevBtn">‹</button>
+          <span id="calMonthLabel" style="align-self:center;font-weight:600;min-width:130px;text-align:center;"></span>
+          <button class="btn btn-secondary btn-small" id="calNextBtn">›</button>
+          <button class="btn btn-secondary btn-small" id="calTodayBtn">Today</button>
+          <button class="btn btn-secondary btn-small" id="calLinkBtn" title="Add your tasks to Google Calendar or Outlook">Link to Google / Outlook</button>
+        </div>
+      </div>
+      <div class="calendar-grid" id="calendarGrid"></div>
+    </div>
+
+    <div id="settingsView" class="view">
+      <div class="content-header">
+        <div>
+          <h1>Settings</h1>
+          <div class="breadcrumb">Calendar, email and display preferences</div>
+        </div>
+        <span id="settingsSaved"></span>
+      </div>
+      <div id="settingsContainer"></div>
+    </div>
+
+    <div id="listView" class="view">
+      <div class="content-header">
+        <div>
+          <h1 id="listTitle"></h1>
+          <div class="breadcrumb" id="listBreadcrumb"></div>
+          <div class="members-row" id="listMembers"></div>
+        </div>
+        <div class="header-actions" id="listHeaderActions"></div>
+      </div>
+
+      <div class="add-task-bar">
+        <input type="text" id="newTaskName" placeholder="Add a task...">
+        <input type="date" id="newTaskDeadline">
+        <input type="time" id="newTaskDeadlineTime">
+        <select id="newTaskPriority">
+          <option value="low">Low</option>
+          <option value="normal" selected>Normal</option>
+          <option value="high">High</option>
+        </select>
+        <input type="text" id="newTaskRepeat" placeholder="Repeat, e.g. every mon, fri" autocomplete="off"
+               title='Type how often it repeats, e.g. "every day", "every weekday", "every 2 weeks", "every 3rd friday", "every last day", "every mon, fri at 8pm", "every day ending dec 31", or "every! 3 days" to count from the day you complete it.'>
+        <select id="newTaskAssignee"><option value="">Unassigned</option></select>
+        <button class="btn btn-primary" id="addTaskBtn">Add Task</button>
+      </div>
+
+      <ul class="task-list" id="taskList"></ul>
+    </div>
+  </main>
+
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box" id="modalBox"></div>
+</div>
+
+<div id="toastContainer"></div>
+
+<script>
+    // ============================================================
+    // Cookie helpers
+    // ============================================================
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(";").shift();
+        return null;
+    }
+    function setCookie(name, value, maxAgeSeconds) {
+        document.cookie = `${name}=${value}; path=/; max-age=${maxAgeSeconds}`;
+    }
+    function clearCookie(name) {
+        document.cookie = `${name}=; path=/; max-age=0`;
+    }
+
+    let authToken = getCookie("authToken") || null;
+
+    // ============================================================
+    // Auth screen logic
+    // ============================================================
+    // Server address. The Android app ships a copy of this page with this set to its server.
+    const WS_BASE = "wss://server.taile58f66.ts.net:443";
+
+    let isSignup = false;
+
+    const title = document.getElementById("formTitle");
+    const toggle = document.getElementById("toggleForm");
+    const button = document.getElementById("submitBtn");
+    const message = document.getElementById("message");
+    const password2 = document.getElementById("password2");
+    const emailInput = document.getElementById("email");
+    const authCard = document.getElementById("authCard");
+    const appEl = document.getElementById("app");
+
+    const usernameInput = document.getElementById("username");
+    const passwordInput = document.getElementById("password");
+    const codeInput = document.getElementById("resetCode");
+    const forgotLink = document.getElementById("forgotLink");
+    const resendLink = document.getElementById("resendLink");
+    let authMode = "signin";      // signin | signup | forgot | reset
+    let resetIdentifier = "";
+
+    function setMode(mode, keepMessage) {
+        authMode = mode;
+        isSignup = mode === "signup";
+        const reset = mode === "reset", forgot = mode === "forgot";
+        title.textContent = { signin: "Sign In", signup: "Sign Up", forgot: "Forgot Password", reset: "Reset Password" }[mode];
+        button.textContent = { signin: "Sign In", signup: "Sign Up", forgot: "Send reset code", reset: "Reset password" }[mode];
+        toggle.textContent = mode === "signin" ? "Don't have an account? Sign Up"
+            : mode === "signup" ? "Already have an account? Sign In" : "Back to Sign In";
+        usernameInput.style.display = reset ? "none" : "";
+        usernameInput.placeholder = forgot ? "Username or email" : "Username";
+        codeInput.style.display = reset ? "block" : "none";
+        passwordInput.style.display = forgot ? "none" : "";
+        passwordInput.placeholder = reset ? "New password" : "Password";
+        password2.style.display = (mode === "signup" || reset) ? "block" : "none";
+        password2.placeholder = reset ? "Verify new password" : "Verify Password";
+        emailInput.style.display = mode === "signup" ? "block" : "none";
+        forgotLink.style.display = mode === "signin" ? "" : "none";
+        resendLink.style.display = reset ? "" : "none";
+        if (!keepMessage) message.textContent = "";
+        if (reset) codeInput.focus();
+    }
+    setMode("signin");
+    try {
+        const notice = sessionStorage.getItem("authNotice");
+        if (notice) { sessionStorage.removeItem("authNotice"); message.style.color = "#ffb2b2"; message.textContent = notice; }
+    } catch (e) {}
+
+    toggle.onclick = () => {
+        if (authMode === "signin") setMode("signup");
+        else { resetIdentifier = ""; setMode("signin"); }
+    };
+    forgotLink.onclick = () => setMode("forgot");
+
+    async function sendResetCode(identifier, quiet) {
+        message.style.color = "";
+        message.textContent = "Sending...";
+        try {
+            const r = await wsRequestOnce(WS_BASE + "/accounts/forgot", { identifier });
+            if (r.status !== "ok") { message.style.color = "#ffb2b2"; message.textContent = r.message; return false; }
+            resetIdentifier = identifier;
+            setMode("reset", true);
+            message.style.color = "#b2ffb2";
+            message.textContent = r.message + " Codes expire in 15 minutes.";
+            return true;
+        } catch (err) {
+            message.style.color = "#ffb2b2";
+            message.textContent = "Connection error.";
+            return false;
+        }
+    }
+    resendLink.onclick = () => sendResetCode(resetIdentifier);
+
+    function wsRequestOnce(url, payload) {
+        return new Promise((resolve, reject) => {
+            const sock = new WebSocket(url);
+            sock.onopen = () => sock.send(JSON.stringify(payload));
+            sock.onerror = reject;
+            sock.onmessage = (event) => {
+                resolve(JSON.parse(event.data));
+                sock.close();
+            };
+        });
+    }
+
+    button.onclick = async () => {
+        if (authMode === "forgot") {
+            const identifier = usernameInput.value.trim();
+            if (!identifier) { message.style.color = "#ffb2b2"; message.textContent = "Enter your username or email."; return; }
+            sendResetCode(identifier);
+            return;
+        }
+        if (authMode === "reset") {
+            const code = codeInput.value.replace(/\s+/g, "");
+            const np = passwordInput.value.trim();
+            if (!/^\d{6}$/.test(code)) { message.style.color = "#ffb2b2"; message.textContent = "Enter the 6-digit code from the email."; return; }
+            if (!np) { message.style.color = "#ffb2b2"; message.textContent = "Enter a new password."; return; }
+            if (np !== password2.value.trim()) { message.style.color = "#ffb2b2"; message.textContent = "Passwords do not match."; return; }
+            message.style.color = "";
+            message.textContent = "Processing...";
+            try {
+                const r = await wsRequestOnce(WS_BASE + "/accounts/reset", { identifier: resetIdentifier, code, password: np });
+                if (r.status === "ok") {
+                    message.style.color = "#b2ffb2";
+                    message.textContent = "Password changed! Signing you in...";
+                    authToken = r.token;
+                    setCookie("authToken", authToken, 2592000);
+                    setTimeout(() => enterApp(), 500);
+                } else { message.style.color = "#ffb2b2"; message.textContent = r.message; }
+            } catch (err) { message.style.color = "#ffb2b2"; message.textContent = "Connection error."; }
+            return;
+        }
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value.trim();
+        const verify = password2.value.trim();
+
+        if (!username || !password || (isSignup && !verify)) {
+            message.style.color = "#ffb2b2";
+            message.textContent = "Please fill out all fields.";
+            return;
+        }
+        if (isSignup && password !== verify) {
+            message.style.color = "#ffb2b2";
+            message.textContent = "Passwords do not match.";
+            return;
+        }
+
+        const email = isSignup ? emailInput.value.trim() : "";
+        if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+            message.style.color = "#ffb2b2";
+            message.textContent = "That email address doesn't look right.";
+            return;
+        }
+
+        const endpoint = isSignup
+            ? WS_BASE + "/accounts/create"
+            : WS_BASE + "/accounts/login";
+
+        message.style.color = "";
+        message.textContent = "Processing...";
+
+        try {
+            const response = await wsRequestOnce(endpoint, isSignup ? { username, password, email } : { username, password });
+            if (response.status === "ok") {
+                message.style.color = "#b2ffb2";
+                message.textContent = "Success! Redirecting...";
+                authToken = response.token;
+                if (response.email_pending) pendingEmailNotice = true;
+                setCookie("authToken", authToken, 2592000);
+                setTimeout(() => enterApp(), 500);
+            } else {
+                message.style.color = "#ffb2b2";
+                message.textContent = response.message;
+            }
+        } catch (err) {
+            message.style.color = "#ffb2b2";
+            message.textContent = "Connection error.";
+        }
+    };
+
+    // ============================================================
+    // Theme preference
+    // ============================================================
+    function applyThemePreference(isDark) {
+        document.body.classList.toggle("dark", isDark);
+        setCookie("theme", isDark ? "dark" : "light", 31536000);
+        const themeSetting = document.getElementById("themeSettingToggle");
+        if (themeSetting) themeSetting.checked = isDark;
+    }
+    if (getCookie("theme") === "dark") applyThemePreference(true);
+
+    // ============================================================
+    // Mobile detection + sidebar toggle
+    // ============================================================
+    const MOBILE_BREAKPOINT = 768;
+    function isMobile() { return window.innerWidth <= MOBILE_BREAKPOINT; }
+
+    const sidebarEl = document.getElementById("sidebar");
+    const sidebarOverlay = document.getElementById("sidebarOverlay");
+    const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+
+    function openSidebar() {
+        sidebarEl.classList.add("mobile-open");
+        sidebarOverlay.style.display = "block";
+    }
+    function closeSidebar() {
+        sidebarEl.classList.remove("mobile-open");
+        sidebarOverlay.style.display = "none";
+    }
+    function toggleSidebar() {
+        if (sidebarEl.classList.contains("mobile-open")) closeSidebar();
+        else openSidebar();
+    }
+    if (mobileMenuBtn) mobileMenuBtn.addEventListener("click", toggleSidebar);
+    sidebarOverlay.addEventListener("click", closeSidebar);
+
+    // Close the mobile sidebar automatically after navigating somewhere
+    function closeSidebarIfMobile() {
+        if (isMobile()) closeSidebar();
+    }
+    window.addEventListener("resize", () => { if (!isMobile()) closeSidebar(); });
+
+    // ============================================================
+    // App state
+    // ============================================================
+    let ws = null;
+    let currentUser = null;
+    let pending = new Map();
+    let reqCounter = 0;
+    let dashboard = { projects: [], standalone_lists: [] };
+    let currentList = null;
+    let currentView = "welcome";
+    let collapsedProjects = new Set();
+    let notifications = [];
+
+    // ---------- User settings (loaded from the server; see the Settings page) ----------
+    let appSettings = { week_start: "sun", time_format: "12h", default_priority: "normal", show_completed_tasks: true, timezone: "" };
+    let settingsData = null;
+    let pendingEmailNotice = false;
+
+    // ---------- Sort preferences ----------
+    const SORT_OPTIONS = [
+        { value: "default", label: "Default order" },
+        { value: "name", label: "Name (A–Z)" },
+        { value: "priority", label: "Priority (High first)" },
+        { value: "deadline", label: "Deadline (Soonest)" },
+        { value: "created", label: "Date added (Newest)" },
+    ];
+
+    let sortPrefs = {};
+    try { sortPrefs = JSON.parse(getCookie("sortPrefs") || "{}"); } catch (e) { sortPrefs = {}; }
+
+    function getSortPref(listId) { return sortPrefs[listId] || "default"; }
+    function setSortPref(listId, value) {
+        sortPrefs[listId] = value;
+        setCookie("sortPrefs", JSON.stringify(sortPrefs), 31536000);
+    }
+
+    const PRIORITY_RANK = { high: 0, normal: 1, low: 2 };
+
+    function sortTaskGroup(tasks, sortBy) {
+        const arr = tasks.slice();
+        switch (sortBy) {
+            case "name":
+                arr.sort((a, b) => a.name.localeCompare(b.name));
+                break;
+            case "priority":
+                arr.sort((a, b) => (PRIORITY_RANK[a.priority] ?? 1) - (PRIORITY_RANK[b.priority] ?? 1));
+                break;
+            case "deadline":
+                arr.sort((a, b) => {
+                    if (!a.deadline && !b.deadline) return 0;
+                    if (!a.deadline) return 1;
+                    if (!b.deadline) return -1;
+                    const da = deadlineDateTime(a.deadline, a.deadline_time).getTime();
+                    const db = deadlineDateTime(b.deadline, b.deadline_time).getTime();
+                    return da - db;
+                });
+                break;
+            case "created":
+                arr.sort((a, b) => b.id - a.id);
+                break;
+            default:
+                arr.sort((a, b) => a.id - b.id);
+        }
+        return arr;
+    }
+
+    function getSortedTasksForDisplay() {
+        if (!currentList) return [];
+        const sortBy = getSortPref(currentList.id);
+        const incomplete = currentList.tasks.filter((t) => !t.completed);
+        const completed = appSettings.show_completed_tasks
+            ? currentList.tasks.filter((t) => t.completed)
+                .sort((a, b) => (a.completed_at || "").localeCompare(b.completed_at || ""))
+            : [];
+        return sortTaskGroup(incomplete, sortBy).concat(completed);
+    }
+
+    // ---------- Repeating tasks ----------
+    // Repeats are typed as a phrase ("every mon, fri", "every! 3 days"), Todoist-style.
+    // The server parses it, sets the first due date if none was given, and when the task
+    // is completed moves it to its next future date instead of closing it.
+    function repeatBadgeHtml(task) {
+        return task.repeat
+            ? `<span class="repeat-badge" title="Repeats: ${escapeHtml(task.repeat)}">↻ ${escapeHtml(task.repeat)}</span>`
+            : "";
+    }
+
+    function enterApp() {
+        authCard.style.display = "none";
+        appEl.classList.add("visible");
+        document.body.style.background = "#f8f9fb";
+        document.body.style.alignItems = "stretch";
+        document.body.style.justifyContent = "stretch";
+        connectAppSocket()
+            .then(() => {
+                renderProfile();
+                return Promise.all([loadDashboard(), refreshNotifications(), loadSettings()]);
+            })
+            .then(() => {
+                const e = settingsData && settingsData.email;
+                if (!e || !e.address || e.verified) { pendingEmailNotice = false; return; }
+                if (pendingEmailNotice && settingsData.email_service) {
+                    openSettings("settingsEmailCard");
+                    showToast("We emailed you a code. Enter it below to verify your email.");
+                } else if (!pendingEmailNotice) {
+                    showToast("Your email isn't verified yet. Verify it in Settings to get emails.");
+                }
+                pendingEmailNotice = false;
+            })
+            .catch((err) => {
+                if (err && err.authFailed) {
+                    // Stale session (e.g. password was reset elsewhere): back to the sign-in card.
+                    clearCookie("authToken");
+                    try { sessionStorage.setItem("authNotice", /password was changed/.test(err.message) ? err.message : "Please sign in again."); } catch (e) {}
+                    location.reload();
+                    return;
+                }
+                showToast("Connection failed: " + err.message);
+            });
+    }
+
+    function connectAppSocket() {
+        return new Promise((resolve, reject) => {
+            ws = new WebSocket(WS_BASE + "/ws/app");
+            ws.onopen = () => ws.send(JSON.stringify({ token: authToken }));
+            ws.onmessage = (evt) => {
+                const msg = JSON.parse(evt.data);
+                if (msg.type === "auth") {
+                    if (msg.ok) { currentUser = msg.user; resolve(); }
+                    else { const e = new Error(msg.error || "auth failed"); e.authFailed = true; reject(e); }
+                    return;
+                }
+                if (msg.type === "response") {
+                    const p = pending.get(msg.id);
+                    if (!p) return;
+                    pending.delete(msg.id);
+                    if (msg.ok) p.resolve(msg.data);
+                    else p.reject(new Error(msg.error || "request failed"));
+                    return;
+                }
+                if (msg.type === "event") handleLiveEvent(msg);
+            };
+            ws.onerror = () => reject(new Error("could not connect"));
+            ws.onclose = (ev) => {
+                if (ev && ev.code === 4001 && currentUser) {
+                    clearCookie("authToken");
+                    try { sessionStorage.setItem("authNotice", "Your password was changed. Please sign in again."); } catch (e) {}
+                    location.reload();
+                    return;
+                }
+                if (currentUser) showToast("Disconnected from live updates.");
+            };
+        });
+    }
+
+    function call(action, payload = {}) {
+        return new Promise((resolve, reject) => {
+            const id = "r" + (++reqCounter);
+            pending.set(id, { resolve, reject });
+            ws.send(JSON.stringify({ id, action, payload }));
+        });
+    }
+
+    document.getElementById("logoutLink").addEventListener("click", (e) => {
+        e.preventDefault();
+        clearCookie("authToken");
+        location.reload();
+    });
+
+    if (authToken) enterApp();
+
+    // ============================================================
+    // Utilities
+    // ============================================================
+    function escapeHtml(str) {
+        const div = document.createElement("div");
+        div.textContent = str ?? "";
+        return div.innerHTML;
+    }
+    function pad2(n) { return String(n).padStart(2, "0"); }
+    function dateToStr(d) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
+    function todayStr() { return dateToStr(new Date()); }
+    function offsetDayStr(offset) {
+        const d = new Date();
+        d.setDate(d.getDate() + offset);
+        return dateToStr(d);
+    }
+
+    const AVATAR_COLORS = ["#ef4444","#f97316","#eab308","#22c55e","#0ea5e9","#6366f1","#a855f7","#ec4899"];
+    function avatarColor(name) {
+        let hash = 0;
+        for (const ch of name) hash = (hash * 31 + ch.charCodeAt(0)) % AVATAR_COLORS.length;
+        return AVATAR_COLORS[Math.abs(hash)];
+    }
+    function avatarHtml(username, size) {
+        const initial = (username || "?")[0].toUpperCase();
+        const style = size ? `width:${size}px;height:${size}px;font-size:${size * 0.4}px;` : "";
+        return `<div class="avatar" style="background:${avatarColor(username)};${style}" title="${escapeHtml(username)}">${escapeHtml(initial)}</div>`;
+    }
+
+    function renderProfile() {
+        if (!currentUser) return;
+        document.getElementById("profileAvatar").innerHTML = avatarHtml(currentUser.username, 28);
+        document.getElementById("profileName").textContent = currentUser.username;
+    }
+
+    function showToast(text) {
+        const container = document.getElementById("toastContainer");
+        const el = document.createElement("div");
+        el.className = "toast";
+        el.textContent = text;
+        container.appendChild(el);
+        setTimeout(() => el.remove(), 4200);
+    }
+
+    function switchView(view) {
+        currentView = view;
+        document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
+        document.getElementById(view + "View").classList.add("active");
+        document.querySelectorAll(".list-link, .my-tasks-link, .calendar-link, .settings-link").forEach((a) => a.classList.remove("active"));
+    }
+
+    // ---------- Relative time (for notifications) ----------
+    function relativeTime(isoStr) {
+        const then = new Date(isoStr + (isoStr.endsWith("Z") ? "" : "Z"));
+        const now = new Date();
+        let diffSec = Math.floor((now - then) / 1000);
+        if (diffSec < 0) diffSec = 0;
+
+        if (diffSec < 60) return `${diffSec}s ago`;
+        const diffMin = Math.floor(diffSec / 60);
+        if (diffMin < 60) return `${diffMin}m ago`;
+        const diffHr = Math.floor(diffMin / 60);
+        if (diffHr < 24) return `${diffHr}h ago`;
+        const diffDay = Math.floor(diffHr / 24);
+        if (diffDay < 7) return `${diffDay}d ago`;
+        const diffWeek = Math.floor(diffDay / 7);
+        if (diffWeek < 5) return `${diffWeek}w ago`;
+
+        const sameYear = then.getFullYear() === now.getFullYear();
+        const opts = sameYear ? { month: "short", day: "numeric" } : { month: "short", day: "numeric", year: "numeric" };
+        return then.toLocaleDateString(undefined, opts);
+    }
+
+    // ---------- Smart deadline formatting ----------
+    function formatClock(t) {
+        if (!t) return "";
+        const [h, m] = t.split(":").map(Number);
+        if (appSettings.time_format === "24h") return `${pad2(h)}:${pad2(m)}`;
+        const period = h >= 12 ? "PM" : "AM";
+        const h12 = ((h + 11) % 12) + 1;
+        return `${h12}:${pad2(m)} ${period}`;
+    }
+
+    function deadlineDateTime(deadline, time) {
+        return new Date(`${deadline}T${time || "23:59"}:00`);
+    }
+
+    function isOverdue(deadline, time, completed) {
+        if (completed || !deadline) return false;
+        return deadlineDateTime(deadline, time).getTime() < Date.now();
+    }
+
+    function formatDeadline(deadline, time, completed) {
+        if (!deadline) return null;
+        let label;
+        if (deadline === todayStr()) label = "Today";
+        else if (deadline === offsetDayStr(1)) label = "Tomorrow";
+        else if (deadline === offsetDayStr(-1)) label = "Yesterday";
+        else {
+            const d = new Date(deadline + "T00:00:00");
+            const sameYear = d.getFullYear() === new Date().getFullYear();
+            label = d.toLocaleDateString(undefined, sameYear ? { month: "short", day: "numeric" } : { month: "short", day: "numeric", year: "numeric" });
+        }
+        if (time) label += ` at ${formatClock(time)}`;
+        const overdue = isOverdue(deadline, time, completed);
+        if (overdue) label += " · Overdue";
+        return { label, overdue };
+    }
+
+    // ============================================================
+    // Modal helper
+    // ============================================================
+    const modalOverlay = document.getElementById("modalOverlay");
+    const modalBox = document.getElementById("modalBox");
+
+    function openModal({ title, fields, submitLabel, onSubmit }) {
+        modalBox.innerHTML = `
+            <h3>${escapeHtml(title)}</h3>
+            <div id="modalFields"></div>
+            <div class="modal-error" id="modalError"></div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="modalCancel">Cancel</button>
+                <button class="btn btn-primary" id="modalSubmit">${escapeHtml(submitLabel || "Save")}</button>
+            </div>
+        `;
+        const fieldsEl = modalBox.querySelector("#modalFields");
+        fields.forEach((f) => {
+            const wrap = document.createElement("div");
+            wrap.className = "field";
+            const label = document.createElement("label");
+            label.textContent = f.label;
+            wrap.appendChild(label);
+
+            let input;
+            if (f.type === "select") {
+                input = document.createElement("select");
+                (f.options || []).forEach((opt) => {
+                    const o = document.createElement("option");
+                    o.value = opt.value;
+                    o.textContent = opt.label;
+                    if (String(opt.value) === String(f.value)) o.selected = true;
+                    input.appendChild(o);
+                });
+            } else {
+                input = document.createElement("input");
+                input.type = f.type || "text";
+                if (f.value !== undefined && f.value !== null) input.value = f.value;
+                if (f.placeholder) input.placeholder = f.placeholder;
+            }
+            input.id = "field_" + f.id;
+            wrap.appendChild(input);
+            fieldsEl.appendChild(wrap);
+        });
+
+        modalOverlay.classList.add("visible");
+        modalBox.querySelector("#modalCancel").onclick = closeModal;
+        modalBox.querySelector("#modalSubmit").onclick = async () => {
+            const values = {};
+            fields.forEach((f) => { values[f.id] = document.getElementById("field_" + f.id).value.trim(); });
+            try {
+                await onSubmit(values);
+                closeModal();
+            } catch (err) {
+                modalBox.querySelector("#modalError").textContent = err.message;
+            }
+        };
+    }
+
+    function closeModal() {
+        modalOverlay.classList.remove("visible");
+        modalBox.innerHTML = "";
+    }
+
+    modalOverlay.addEventListener("click", (e) => { if (e.target === modalOverlay) closeModal(); });
+
+    // ============================================================
+    // Notifications
+    // ============================================================
+    const bellBtn = document.getElementById("bellBtn");
+    const bellBadge = document.getElementById("bellBadge");
+    const notifPanel = document.getElementById("notifPanel");
+    const notifList = document.getElementById("notifList");
+
+    async function refreshNotifications() {
+        const data = await call("get_notifications");
+        notifications = data.notifications;
+        const pendingCount = notifications.filter((n) => n.status === "pending").length;
+        if (pendingCount > 0) {
+            bellBadge.style.display = "flex";
+            bellBadge.textContent = pendingCount > 9 ? "9+" : String(pendingCount);
+        } else {
+            bellBadge.style.display = "none";
+        }
+        if (notifPanel.classList.contains("visible")) renderNotifPanel();
+    }
+
+    function notifText(n) {
+        const who = n.inviter ? n.inviter.username : "Someone";
+        if (n.type === "project_invite") {
+            const name = n.project ? n.project.name : "a project";
+            if (n.status === "pending") return `${escapeHtml(who)} invited you to the project "${escapeHtml(name)}"`;
+            if (n.status === "accepted") return `You joined the project "${escapeHtml(name)}"`;
+            return `You declined the invite to "${escapeHtml(name)}"`;
+        }
+        const name = n.list ? n.list.name : "a list";
+        if (n.status === "pending") return `${escapeHtml(who)} shared the list "${escapeHtml(name)}" with you`;
+        if (n.status === "accepted") return `You joined the list "${escapeHtml(name)}"`;
+        return `You declined the share for "${escapeHtml(name)}"`;
+    }
+
+    function renderNotifPanel() {
+        if (!notifications.length) {
+            notifList.innerHTML = `<div class="notif-empty">No notifications yet</div>`;
+            return;
+        }
+        notifList.innerHTML = notifications.map((n) => `
+            <div class="notif-item" data-id="${n.id}">
+                <div class="notif-text">${notifText(n)}</div>
+                <div class="notif-time">${relativeTime(n.created_at)}</div>
+                ${n.status === "pending" ? `
+                    <div class="notif-actions">
+                        <button class="btn btn-primary btn-small notif-accept" data-id="${n.id}">Accept</button>
+                        <button class="btn btn-secondary btn-small notif-deny" data-id="${n.id}">Deny</button>
+                    </div>
+                ` : `<div class="notif-status ${n.status}">${n.status === "accepted" ? "Accepted" : "Denied"}</div>`}
+            </div>
+        `).join("");
+
+        notifList.querySelectorAll(".notif-accept").forEach((btn) => {
+            btn.addEventListener("click", () => respondToNotification(Number(btn.dataset.id), true));
+        });
+        notifList.querySelectorAll(".notif-deny").forEach((btn) => {
+            btn.addEventListener("click", () => respondToNotification(Number(btn.dataset.id), false));
+        });
+    }
+
+    async function respondToNotification(notificationId, accept) {
+        try {
+            await call("respond_notification", { notification_id: notificationId, accept });
+            await refreshNotifications();
+            showToast(accept ? "Invite accepted" : "Invite denied");
+        } catch (err) {
+            showToast(err.message);
+        }
+    }
+
+    bellBtn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const willOpen = !notifPanel.classList.contains("visible");
+        notifPanel.classList.toggle("visible");
+        if (willOpen) {
+            renderNotifPanel();
+            await refreshNotifications();
+        }
+    });
+    document.addEventListener("click", (e) => {
+        if (!notifPanel.contains(e.target) && e.target !== bellBtn) notifPanel.classList.remove("visible");
+    });
+
+    // ============================================================
+    // Dashboard / sidebar
+    // ============================================================
+    async function loadDashboard() {
+        dashboard = await call("get_dashboard");
+        renderSidebar();
+    }
+
+    function findProject(id) { return dashboard.projects.find((p) => p.id === id); }
+    function findStandaloneList(id) { return dashboard.standalone_lists.find((l) => l.id === id); }
+
+    function renderSidebar() {
+        const projectsTree = document.getElementById("projectsTree");
+        projectsTree.innerHTML = dashboard.projects.map((p) => `
+            <div class="proj-item ${collapsedProjects.has(p.id) ? "collapsed" : ""}" data-project-item="${p.id}">
+                <div class="proj-header">
+                    <button class="collapse-btn" data-collapse="${p.id}" title="Collapse/expand">▾</button>
+                    <span class="proj-name">${escapeHtml(p.name)}</span>
+                    <span class="member-count">${p.members.length}</span>
+                    ${p.is_owner ? `<button class="icon-btn invite-btn" data-project="${p.id}" title="Invite a teammate">+👤</button>` : ""}
+                    ${p.is_owner ? `<button class="icon-btn danger delete-project-btn" data-project="${p.id}" title="Delete project">🗑</button>` : ""}
+                </div>
+                <div class="proj-lists">
+                    ${p.lists.map((l) => `<a href="#" class="list-link" data-list="${l.id}">${escapeHtml(l.name)}</a>`).join("")}
+                    <a href="#" class="add-list-link" data-project="${p.id}">+ Add list</a>
+                </div>
+            </div>
+        `).join("") || `<div class="empty-state" style="padding:10px;font-size:12.5px;">No projects yet</div>`;
+
+        const standaloneTree = document.getElementById("standaloneTree");
+        standaloneTree.innerHTML = dashboard.standalone_lists.map((l) => `
+            <a href="#" class="list-link" data-list="${l.id}">
+                ${escapeHtml(l.name)}${l.is_owner ? "" : `<span class="shared-tag">shared</span>`}
+            </a>
+        `).join("") || `<div class="empty-state" style="padding:10px;font-size:12.5px;">No lists yet</div>`;
+
+        if (currentList) {
+            document.querySelectorAll(`.list-link[data-list="${currentList.id}"]`).forEach((a) => a.classList.add("active"));
+        }
+        if (currentView === "myTasks") {
+            document.querySelector(".my-tasks-link").classList.add("active");
+        }
+        if (currentView === "calendar") {
+            document.querySelector(".calendar-link").classList.add("active");
+        }
+        if (currentView === "settings") {
+            document.querySelector(".settings-link").classList.add("active");
+        }
+    }
+
+    document.getElementById("sidebarNav").addEventListener("click", async (e) => {
+        const myTasksLink = e.target.closest(".my-tasks-link");
+        if (myTasksLink) { e.preventDefault(); await openMyTasks(); closeSidebarIfMobile(); return; }
+
+        const calendarLink = e.target.closest(".calendar-link");
+        if (calendarLink) { e.preventDefault(); await openCalendar(); closeSidebarIfMobile(); return; }
+
+        const settingsLink = e.target.closest(".settings-link");
+        if (settingsLink) { e.preventDefault(); await openSettings(); closeSidebarIfMobile(); return; }
+
+        const collapseBtn = e.target.closest(".collapse-btn");
+        if (collapseBtn) {
+            e.preventDefault();
+            const pid = Number(collapseBtn.dataset.collapse);
+            if (collapsedProjects.has(pid)) collapsedProjects.delete(pid);
+            else collapsedProjects.add(pid);
+            renderSidebar();
+            return;
+        }
+
+        const inviteBtn = e.target.closest(".invite-btn");
+        if (inviteBtn) { e.preventDefault(); openInviteProjectModal(Number(inviteBtn.dataset.project)); return; }
+
+        const deleteProjectBtn = e.target.closest(".delete-project-btn");
+        if (deleteProjectBtn) { e.preventDefault(); await deleteProject(Number(deleteProjectBtn.dataset.project)); return; }
+
+        const addListLink = e.target.closest(".add-list-link");
+        if (addListLink) { e.preventDefault(); openNewListModal(Number(addListLink.dataset.project)); return; }
+
+        const listLink = e.target.closest(".list-link");
+        if (listLink) { e.preventDefault(); await openList(Number(listLink.dataset.list)); closeSidebarIfMobile(); }
+    });
+
+    async function deleteProject(projectId) {
+        const p = findProject(projectId);
+        const name = p ? p.name : "this project";
+        if (!confirm(`Delete "${name}" and all of its lists/tasks? This can't be undone.`)) return;
+        try {
+            await call("delete_project", { project_id: projectId });
+            dashboard.projects = dashboard.projects.filter((x) => x.id !== projectId);
+            if (currentList && currentList.project && currentList.project.id === projectId) {
+                currentList = null;
+                switchView("welcome");
+            }
+            renderSidebar();
+            showToast(`"${name}" deleted`);
+        } catch (err) {
+            showToast(err.message);
+        }
+    }
+
+    document.getElementById("newProjectBtn").addEventListener("click", openNewProjectModal);
+    document.getElementById("welcomeNewProjectBtn").addEventListener("click", openNewProjectModal);
+
+    function openNewProjectModal() {
+        closeSidebarIfMobile();
+        openModal({
+            title: "New Project",
+            fields: [{ id: "name", label: "Project name", placeholder: "e.g. Website Relaunch" }],
+            submitLabel: "Create",
+            onSubmit: async (v) => {
+                if (!v.name) throw new Error("Name is required");
+                const data = await call("create_project", { name: v.name });
+                dashboard.projects.push(data.project);
+                renderSidebar();
+                showToast(`Project "${data.project.name}" created`);
+            },
+        });
+    }
+
+    document.getElementById("newListBtn").addEventListener("click", () => openNewListModal(null));
+    document.getElementById("welcomeNewListBtn").addEventListener("click", () => openNewListModal(null));
+
+    function openNewListModal(projectId) {
+        closeSidebarIfMobile();
+        const options = [{ value: "", label: "No project (standalone list)" }].concat(
+            dashboard.projects.map((p) => ({ value: String(p.id), label: p.name }))
+        );
+        openModal({
+            title: "New List",
+            fields: [
+                { id: "name", label: "List name", placeholder: "e.g. Groceries" },
+                { id: "project_id", label: "Project", type: "select", options, value: projectId ? String(projectId) : "" },
+            ],
+            submitLabel: "Create",
+            onSubmit: async (v) => {
+                if (!v.name) throw new Error("Name is required");
+                const pid = v.project_id ? Number(v.project_id) : null;
+                const data = await call("create_list", { name: v.name, project_id: pid });
+                if (!pid) {
+                    // Standalone lists aren't broadcast anywhere else, so add it here.
+                    dashboard.standalone_lists.push({
+                        id: data.list.id, name: data.list.name, owner_id: currentUser.id,
+                        is_owner: true, members: data.list.members,
+                    });
+                    renderSidebar();
+                }
+                // For project lists, the "list_created" broadcast (which this connection
+                // is already subscribed to) is what adds it to the sidebar — avoids
+                // adding it twice.
+                await openList(data.list.id);
+            },
+        });
+    }
+
+    function openInviteProjectModal(projectId) {
+        openModal({
+            title: "Invite to Project",
+            fields: [{ id: "username", label: "Username", placeholder: "their account username" }],
+            submitLabel: "Send Invite",
+            onSubmit: async (v) => {
+                if (!v.username) throw new Error("Username is required");
+                await call("invite_project_member", { project_id: projectId, username: v.username });
+                showToast(`Invite sent to ${v.username}`);
+            },
+        });
+    }
+
+    function openShareListModal(listId) {
+        openModal({
+            title: "Share List",
+            fields: [{ id: "username", label: "Username", placeholder: "their account username" }],
+            submitLabel: "Send Invite",
+            onSubmit: async (v) => {
+                if (!v.username) throw new Error("Username is required");
+                await call("share_list", { list_id: listId, username: v.username });
+                showToast(`Invite sent to ${v.username}`);
+            },
+        });
+    }
+
+    async function leaveList(listId, listName) {
+        if (!confirm(`Leave "${listName}"? You'll lose access unless someone re-shares it with you.`)) return;
+        try {
+            await call("leave_list", { list_id: listId });
+            dashboard.standalone_lists = dashboard.standalone_lists.filter((l) => l.id !== listId);
+            currentList = null;
+            switchView("welcome");
+            renderSidebar();
+            showToast(`Left "${listName}"`);
+        } catch (err) {
+            showToast(err.message);
+        }
+    }
+
+    // ============================================================
+    // My Tasks view
+    // ============================================================
+    async function openMyTasks() {
+        switchView("myTasks");
+        document.querySelector(".my-tasks-link").classList.add("active");
+        const data = await call("get_my_tasks");
+        renderMyTasks(data.tasks);
+    }
+
+    function renderMyTasks(tasks) {
+        const container = document.getElementById("myTasksContainer");
+        if (!tasks.length) {
+            container.innerHTML = `<div class="empty-state">Nothing assigned to you right now 🎉</div>`;
+            return;
+        }
+        container.innerHTML = tasks.map((t) => {
+            const d = formatDeadline(t.deadline, t.deadline_time, t.completed);
+            return `
+            <div class="mytask-row" data-list="${t.list_id}">
+                <span class="priority-dot priority-${t.priority}"></span>
+                <span style="flex:1;">${escapeHtml(t.name)}</span>
+                <span class="mytask-list-tag">${escapeHtml(t.list_name)}</span>
+                ${d ? `<span class="deadline-badge ${d.overdue ? "overdue" : ""} ${d.label === "Today" ? "dueToday" : ""}">${escapeHtml(d.label)}</span>` : ""}
+                ${repeatBadgeHtml(t)}
+            </div>
+        `;
+        }).join("");
+        container.querySelectorAll(".mytask-row").forEach((row) => {
+            row.addEventListener("click", () => openList(Number(row.dataset.list)));
+        });
+    }
+
+    // ============================================================
+    // Calendar view
+    // ============================================================
+    let calendarTasks = [];
+    let calViewDate = new Date();
+
+    async function openCalendar() {
+        switchView("calendar");
+        document.querySelector(".calendar-link").classList.add("active");
+        await loadCalendar();
+    }
+
+    // Fetch the tasks for the month on screen. The server also returns, for repeating tasks,
+    // every other date in that month they'll come up on (future_dates).
+    async function loadCalendar() {
+        const y = calViewDate.getFullYear(), mo = calViewDate.getMonth();
+        const data = await call("get_calendar", {
+            range_start: `${y}-${pad2(mo + 1)}-01`,
+            range_end: `${y}-${pad2(mo + 1)}-${pad2(new Date(y, mo + 1, 0).getDate())}`,
+            today: todayStr(),
+        });
+        calendarTasks = data.tasks.filter((t) => t.deadline);
+        renderCalendar();
+    }
+
+    document.getElementById("calPrevBtn").addEventListener("click", () => {
+        calViewDate = new Date(calViewDate.getFullYear(), calViewDate.getMonth() - 1, 1);
+        loadCalendar();
+    });
+    document.getElementById("calNextBtn").addEventListener("click", () => {
+        calViewDate = new Date(calViewDate.getFullYear(), calViewDate.getMonth() + 1, 1);
+        loadCalendar();
+    });
+    document.getElementById("calTodayBtn").addEventListener("click", () => {
+        calViewDate = new Date();
+        loadCalendar();
+    });
+    document.getElementById("calLinkBtn").addEventListener("click", () => openSettings("settingsCalendarCard"));
+
+    function renderCalendar() {
+        const year = calViewDate.getFullYear();
+        const month = calViewDate.getMonth();
+        document.getElementById("calMonthLabel").textContent =
+            calViewDate.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+
+        const firstDay = new Date(year, month, 1);
+        const weekStart = appSettings.week_start === "mon" ? 1 : 0;
+        const startOffset = (firstDay.getDay() - weekStart + 7) % 7;
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        const tasksByDate = {};
+        calendarTasks.forEach((t) => {
+            (tasksByDate[t.deadline] = tasksByDate[t.deadline] || []).push({ t, future: false });
+            // Later occurrences of a repeating task, drawn on every day it will come up.
+            (t.future_dates || []).forEach((d) => {
+                (tasksByDate[d] = tasksByDate[d] || []).push({ t, future: true });
+            });
+        });
+
+        const allDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const weekdayLabels = allDays.slice(weekStart).concat(allDays.slice(0, weekStart));
+        let html = weekdayLabels.map((d) => `<div class="calendar-weekday">${d}</div>`).join("");
+
+        for (let i = 0; i < startOffset; i++) html += `<div class="calendar-cell empty"></div>`;
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateStr = `${year}-${pad2(month + 1)}-${pad2(day)}`;
+            const dayTasks = tasksByDate[dateStr] || [];
+            const isToday = dateStr === todayStr();
+            html += `
+            <div class="calendar-cell ${isToday ? "today" : ""}" data-date="${dateStr}">
+                <div class="calendar-daynum">${day}</div>
+                <div class="calendar-tasks">
+                    ${dayTasks.slice(0, 3).map(({ t, future }) => `
+                        <div class="calendar-task-chip calendar-priority-${t.priority} ${future ? "calendar-future" : ""} ${t.completed ? "calendar-done" : ""}" data-list="${t.list_id}" title="${escapeHtml(t.name)}${t.assignee ? " · " + escapeHtml(t.assignee.username) : ""}${t.repeat ? " (repeats: " + escapeHtml(t.repeat) + ")" : ""}">
+                            ${t.repeat ? "↻ " : ""}${escapeHtml(t.name)}
+                        </div>
+                    `).join("")}
+                    ${dayTasks.length > 3 ? `<div class="calendar-more">+${dayTasks.length - 3} more</div>` : ""}
+                </div>
+            </div>
+        `;
+        }
+
+        document.getElementById("calendarGrid").innerHTML = html;
+        document.querySelectorAll(".calendar-task-chip").forEach((chip) => {
+            chip.addEventListener("click", () => openList(Number(chip.dataset.list)));
+        });
+    }
+
+    // ============================================================
+    // List view
+    // ============================================================
+    async function openList(listId) {
+        const data = await call("get_list", { list_id: listId });
+        currentList = data.list;
+        switchView("list");
+        document.querySelectorAll(`.list-link[data-list="${listId}"]`).forEach((a) => a.classList.add("active"));
+        renderListHeader();
+        renderAssigneeOptions();
+        renderTasks();
+    }
+
+    function renderListHeader() {
+        document.getElementById("listTitle").textContent = currentList.name;
+        document.getElementById("listBreadcrumb").textContent = currentList.project
+            ? `Project: ${currentList.project.name}`
+            : "Standalone list";
+        document.getElementById("listMembers").innerHTML = currentList.members.map((m) => avatarHtml(m.username, 30)).join("");
+
+        const actions = document.getElementById("listHeaderActions");
+        const sortBy = getSortPref(currentList.id);
+        let html = `
+            <div class="sort-wrap" id="sortWrap">
+                <button class="sort-btn" id="sortBtn" title="Sort tasks">⋮</button>
+                <div class="sort-menu" id="sortMenu">
+                    <div class="sort-menu-label">Sort by</div>
+                    ${SORT_OPTIONS.map((opt) => `
+                        <div class="sort-option ${opt.value === sortBy ? "active" : ""}" data-sort="${opt.value}">
+                            <span>${escapeHtml(opt.label)}</span>
+                            <span class="check">✓</span>
+                        </div>
+                    `).join("")}
+                </div>
+            </div>
+        `;
+        if (currentList.is_owner && !currentList.project) {
+            html += `<button class="btn btn-secondary btn-small" id="shareListBtn">Share</button>`;
+        }
+        if (currentList.is_owner) {
+            html += `<button class="btn btn-danger btn-small" id="deleteListBtn">Delete List</button>`;
+        } else if (!currentList.project) {
+            html += `<button class="btn btn-danger btn-small" id="leaveListBtn">Leave List</button>`;
+        }
+        actions.innerHTML = html;
+
+        const sortBtn = document.getElementById("sortBtn");
+        const sortMenu = document.getElementById("sortMenu");
+        sortBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            sortMenu.classList.toggle("visible");
+        });
+        sortMenu.querySelectorAll(".sort-option").forEach((opt) => {
+            opt.addEventListener("click", () => {
+                setSortPref(currentList.id, opt.dataset.sort);
+                sortMenu.classList.remove("visible");
+                renderListHeader();
+                renderTasks();
+            });
+        });
+
+        const shareBtn = document.getElementById("shareListBtn");
+        if (shareBtn) shareBtn.onclick = () => openShareListModal(currentList.id);
+
+        const leaveBtn = document.getElementById("leaveListBtn");
+        if (leaveBtn) leaveBtn.onclick = () => leaveList(currentList.id, currentList.name);
+
+        const deleteBtn = document.getElementById("deleteListBtn");
+        if (deleteBtn) deleteBtn.onclick = async () => {
+            if (!confirm(`Delete "${currentList.name}"? This can't be undone.`)) return;
+            await call("delete_list", { list_id: currentList.id });
+            removeListFromDashboard(currentList.id);
+            currentList = null;
+            switchView("welcome");
+            renderSidebar();
+        };
+    }
+
+    document.addEventListener("click", (e) => {
+        const sortMenu = document.getElementById("sortMenu");
+        const sortWrap = document.getElementById("sortWrap");
+        if (sortMenu && sortMenu.classList.contains("visible") && sortWrap && !sortWrap.contains(e.target)) {
+            sortMenu.classList.remove("visible");
+        }
+    });
+
+    function renderAssigneeOptions() {
+        const select = document.getElementById("newTaskAssignee");
+        select.innerHTML = `<option value="">Unassigned</option>` +
+            currentList.members.map((m) => `<option value="${m.id}">${escapeHtml(m.username)}</option>`).join("");
+    }
+
+    function renderTasks() {
+        const listEl = document.getElementById("taskList");
+        if (!currentList.tasks.length) {
+            listEl.innerHTML = `<div class="empty-state">No tasks yet. Add one above!</div>`;
+            return;
+        }
+        const sortedTasks = getSortedTasksForDisplay();
+        if (!sortedTasks.length) {
+            listEl.innerHTML = `<div class="empty-state">Everything here is done 🎉 Completed tasks are hidden (change this in Settings).</div>`;
+            return;
+        }
+        listEl.innerHTML = sortedTasks.map(renderTaskItem).join("");
+
+        listEl.querySelectorAll(".task-checkbox").forEach((cb) => {
+            cb.addEventListener("change", async () => {
+                try {
+                    // Send the user's local date so "next occurrence" isn't thrown off by the server's UTC clock.
+                    const res = await call("toggle_task", { task_id: Number(cb.dataset.task), today: todayStr() });
+                    if (res.rolled) {
+                        const next = formatDeadline(res.task.deadline, res.task.deadline_time, false);
+                        showToast(`Done! Next due ${next.label}`);
+                    } else if (res.task.repeat && res.task.completed) {
+                        showToast("That was the last one. This repeat has ended.");
+                    }
+                } catch (err) {
+                    showToast(err.message);
+                    renderTasks();
+                }
+            });
+        });
+        listEl.querySelectorAll(".task-delete").forEach((btn) => {
+            btn.addEventListener("click", () => call("delete_task", { task_id: Number(btn.dataset.task) }));
+        });
+        listEl.querySelectorAll(".task-name").forEach((el) => {
+            el.addEventListener("click", () => openEditTaskModal(Number(el.dataset.task)));
+        });
+    }
+
+    function renderTaskItem(t) {
+        const d = formatDeadline(t.deadline, t.deadline_time, t.completed);
+        return `
+            <li class="task-item ${t.completed ? "completed" : ""}" data-task="${t.id}">
+                <input type="checkbox" class="task-checkbox" data-task="${t.id}" ${t.completed ? "checked" : ""}>
+                <span class="priority-dot priority-${t.priority}"></span>
+                <span class="task-name" data-task="${t.id}">${escapeHtml(t.name)}</span>
+                ${d ? `<span class="deadline-badge ${d.overdue ? "overdue" : ""} ${d.label === "Today" ? "dueToday" : ""}">${escapeHtml(d.label)}</span>` : ""}
+                ${repeatBadgeHtml(t)}
+                ${t.assignee ? `<span class="assignee-chip">${avatarHtml(t.assignee.username, 18)}${escapeHtml(t.assignee.username)}</span>` : ""}
+                <div class="task-actions">
+                    <button class="icon-btn task-delete" data-task="${t.id}" title="Delete">🗑</button>
+                </div>
+            </li>
+        `;
+    }
+
+    document.getElementById("addTaskBtn").addEventListener("click", async () => {
+        const nameInput = document.getElementById("newTaskName");
+        const name = nameInput.value.trim();
+        if (!name) return;
+        const deadline = document.getElementById("newTaskDeadline").value || null;
+        const deadline_time = deadline ? (document.getElementById("newTaskDeadlineTime").value || null) : null;
+        const priority = document.getElementById("newTaskPriority").value;
+        const repeat = document.getElementById("newTaskRepeat").value.trim() || null;
+        const assignedRaw = document.getElementById("newTaskAssignee").value;
+        const assigned_to = assignedRaw ? Number(assignedRaw) : null;
+        try {
+            await call("add_task", { list_id: currentList.id, name, deadline, deadline_time, priority, repeat, assigned_to, today: todayStr() });
+            nameInput.value = "";
+            document.getElementById("newTaskDeadline").value = "";
+            document.getElementById("newTaskDeadlineTime").value = "";
+            document.getElementById("newTaskRepeat").value = "";
+            nameInput.focus();
+        } catch (err) {
+            showToast(err.message);
+        }
+    });
+    document.getElementById("newTaskName").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") document.getElementById("addTaskBtn").click();
+    });
+
+    function openEditTaskModal(taskId) {
+        const task = currentList.tasks.find((t) => t.id === taskId);
+        if (!task) return;
+        openModal({
+            title: "Edit Task",
+            fields: [
+                { id: "name", label: "Task name", value: task.name },
+                { id: "deadline", label: "Deadline date", type: "date", value: task.deadline || "" },
+                { id: "deadline_time", label: "Deadline time (optional)", type: "time", value: task.deadline_time || "" },
+                { id: "priority", label: "Priority", type: "select", value: task.priority,
+                    options: [{ value: "low", label: "Low" }, { value: "normal", label: "Normal" }, { value: "high", label: "High" }] },
+                { id: "repeat", label: "Repeat (e.g. every mon, fri · every! 3 days)", type: "text", value: task.repeat || "",
+                    placeholder: "Leave empty for no repeat" },
+                { id: "assigned_to", label: "Assigned to", type: "select",
+                    value: task.assignee ? String(task.assignee.id) : "",
+                    options: [{ value: "", label: "Unassigned" }].concat(
+                        currentList.members.map((m) => ({ value: String(m.id), label: m.username }))
+                    ) },
+            ],
+            submitLabel: "Save",
+            onSubmit: async (v) => {
+                if (!v.name) throw new Error("Name is required");
+                await call("edit_task", {
+                    task_id: taskId,
+                    name: v.name,
+                    deadline: v.deadline || null,
+                    deadline_time: v.deadline ? (v.deadline_time || null) : null,
+                    priority: v.priority,
+                    repeat: v.repeat || null,
+                    assigned_to: v.assigned_to ? Number(v.assigned_to) : null,
+                    today: todayStr(),
+                });
+            },
+        });
+    }
+
+    // ============================================================
+    // Settings page
+    // Every control saves the moment it changes. The server validates each value.
+    // ============================================================
+    const SCOPE_OPTIONS = [
+        ["assigned", "Only tasks assigned to me"],
+        ["assigned_unassigned", "Mine, plus tasks no one is assigned to"],
+        ["all", "Every task in my lists and projects"],
+    ];
+
+    function applySettings() {
+        const pri = document.getElementById("newTaskPriority");
+        if (pri && appSettings.default_priority) pri.value = appSettings.default_priority;
+        if (currentView === "calendar") renderCalendar();
+        if (currentView === "list" && currentList) renderTasks();
+    }
+
+    async function loadSettings() {
+        settingsData = await call("get_settings");
+        appSettings = { ...appSettings, ...settingsData.settings };
+        applySettings();
+        // First time: remember this browser's time zone, so the daily digest and calendar times line up.
+        if (!settingsData.settings.timezone) {
+            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            if (tz) {
+                call("update_settings", { settings: { timezone: tz } })
+                    .then((d) => { settingsData = d; appSettings.timezone = d.settings.timezone; })
+                    .catch(() => {});
+            }
+        }
+    }
+
+    async function openSettings(scrollToId) {
+        switchView("settings");
+        document.querySelector(".settings-link").classList.add("active");
+        try {
+            settingsData = await call("get_settings");
+            appSettings = { ...appSettings, ...settingsData.settings };
+        } catch (err) {
+            showToast(err.message);
+            return;
+        }
+        renderSettingsPage();
+        if (scrollToId) {
+            const el = document.getElementById(scrollToId);
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+    }
+
+    let savedTimer = null;
+    function flashSaved() {
+        const el = document.getElementById("settingsSaved");
+        if (!el) return;
+        el.textContent = "Saved ✓";
+        el.classList.add("show");
+        clearTimeout(savedTimer);
+        savedTimer = setTimeout(() => el.classList.remove("show"), 1600);
+    }
+
+    async function saveSetting(key, value) {
+        const previous = appSettings[key];
+        appSettings[key] = value;
+        applySettings();
+        syncSettingsDisabled();
+        try {
+            settingsData = await call("update_settings", { settings: { [key]: value } });
+            appSettings[key] = settingsData.settings[key];
+            flashSaved();
+        } catch (err) {
+            appSettings[key] = previous;
+            showToast(err.message);
+            syncSettingsControls();
+            syncSettingsDisabled();
+            applySettings();
+        }
+    }
+
+    // Put the current values back into the controls (used after a failed save or an update from another tab).
+    function syncSettingsControls() {
+        document.querySelectorAll("#settingsContainer [data-setting]").forEach((el) => {
+            const value = appSettings[el.dataset.setting];
+            if (el.type === "checkbox") el.checked = !!value;
+            else el.value = value;
+        });
+    }
+
+    // Grey out controls that don't apply yet (no verified email, or the digest is off).
+    function syncSettingsDisabled() {
+        const verified = !!(settingsData && settingsData.email.verified);
+        document.querySelectorAll("#settingsContainer .settings-row[data-needs-email], #settingsContainer .settings-row[data-needs]").forEach((row) => {
+            const emailOk = !row.hasAttribute("data-needs-email") || verified;
+            const flagOk = !row.dataset.needs || !!appSettings[row.dataset.needs];
+            const on = emailOk && flagOk;
+            row.classList.toggle("is-disabled", !on);
+            row.querySelectorAll("input, select").forEach((i) => { i.disabled = !on; });
+        });
+    }
+
+    function settingRow({ label, hint, control, needs, email, toggle }) {
+        return `
+            <div class="settings-row ${toggle ? "row-toggle" : ""}" ${needs ? `data-needs="${needs}"` : ""} ${email ? "data-needs-email" : ""}>
+                <div class="settings-label">
+                    <div>${escapeHtml(label)}</div>
+                    ${hint ? `<div class="settings-hint">${escapeHtml(hint)}</div>` : ""}
+                </div>
+                <div class="settings-control">${control}</div>
+            </div>`;
+    }
+    function toggleControl(key) {
+        return `<label class="switch"><input type="checkbox" data-setting="${key}" ${appSettings[key] ? "checked" : ""}><span class="slider"></span></label>`;
+    }
+    function themeToggleControl() {
+        return `<label class="switch"><input type="checkbox" id="themeSettingToggle" ${document.body.classList.contains("dark") ? "checked" : ""}><span class="slider"></span></label>`;
+    }
+    function selectControl(key, options) {
+        return `<select data-setting="${key}">` + options.map(([v, l]) =>
+            `<option value="${escapeHtml(v)}" ${String(appSettings[key]) === v ? "selected" : ""}>${escapeHtml(l)}</option>`).join("") + `</select>`;
+    }
+    function timeControl(key) {
+        return `<input type="time" data-setting="${key}" value="${escapeHtml(appSettings[key])}">`;
+    }
+    function cardHtml(id, title, sub, body) {
+        return `<section class="settings-card" id="${id}"><div class="settings-title">${escapeHtml(title)}</div>` +
+            `${sub ? `<div class="settings-sub">${escapeHtml(sub)}</div>` : ""}${body}</section>`;
+    }
+
+    function timeZoneOptions() {
+        let zones = [];
+        try { zones = Intl.supportedValuesOf("timeZone"); } catch (e) { zones = []; }
+        const set = new Set(zones);
+        const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        [appSettings.timezone, detected].forEach((z) => { if (z) set.add(z); });
+        const opts = [...set].sort().map((z) => [z, z.replace(/_/g, " ")]);
+        return appSettings.timezone ? opts : [["", "Choose your time zone…"]].concat(opts);
+    }
+
+    function emailCardHtml() {
+        const e = settingsData.email;
+        const status = !e.address ? "" : e.verified
+            ? `<span class="pill pill-ok">Verified</span>`
+            : `<span class="pill pill-warn">Not verified</span>`;
+        let body = "";
+        if (!settingsData.email_service) {
+            body += `<div class="settings-callout">Emails aren't set up on this server yet, so Orderly can't send any right now.</div>`;
+        }
+        body += `
+            <div class="settings-row stack">
+                <div class="settings-label">
+                    <div>Email address ${status}</div>
+                    <div class="settings-hint">Optional. We use it only for the emails you choose below.</div>
+                </div>
+                <div class="settings-control">
+                    <input type="email" id="emailInput" placeholder="you@example.com" autocomplete="email" value="${escapeHtml(e.address || "")}">
+                    <button class="btn btn-primary btn-small" id="emailSaveBtn">${e.address ? "Change" : "Save"}</button>
+                </div>
+            </div>`;
+        if (e.address && !e.verified) {
+            body += `
+            <div class="settings-row stack">
+                <div class="settings-label">
+                    <div>Enter the 6-digit code we emailed to ${escapeHtml(e.address)}</div>
+                    <div class="settings-hint">It expires in 15 minutes. Check your spam folder if it doesn't show up.</div>
+                </div>
+                <div class="settings-control">
+                    <input type="text" id="emailCodeInput" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="123456">
+                    <button class="btn btn-primary btn-small" id="emailVerifyBtn">Verify</button>
+                    <button class="btn btn-secondary btn-small" id="emailResendBtn">Send a new code</button>
+                </div>
+            </div>`;
+        }
+        if (e.address && e.verified) {
+            body += `
+            <div class="settings-row">
+                <div class="settings-label"><div>Check that it works</div></div>
+                <div class="settings-control">
+                    <button class="btn btn-secondary btn-small" id="emailTestBtn">Send a test email</button>
+                    <button class="btn btn-danger btn-small" id="emailRemoveBtn">Remove email</button>
+                </div>
+            </div>`;
+        }
+        return cardHtml("settingsEmailCard", "Email", "Add an email to get reminders and updates.", body);
+    }
+
+    function notificationsCardHtml() {
+        const needsVerified = !(settingsData.email && settingsData.email.verified);
+        const body =
+            (needsVerified ? `<div class="settings-callout">Verify your email above to turn these on.</div>` : "") +
+            settingRow({ label: "Which tasks should emails cover?", hint: "Used by the daily digest and due-date reminders.", email: true,
+                control: selectControl("email_scope", SCOPE_OPTIONS) }) +
+            settingRow({ label: "Daily digest", hint: "A morning email with what's on your plate today.", email: true, toggle: true,
+                control: toggleControl("email_daily_digest") }) +
+            settingRow({ label: "Send it at", needs: "email_daily_digest", email: true,
+                control: timeControl("digest_time") }) +
+            settingRow({ label: "Include overdue tasks", needs: "email_daily_digest", email: true, toggle: true,
+                control: toggleControl("digest_include_overdue") }) +
+            settingRow({ label: "Also show what's coming up", needs: "email_daily_digest", email: true,
+                control: selectControl("digest_upcoming_days", [["0", "Just today"], ["1", "Tomorrow too"], ["3", "The next 3 days"], ["7", "The next 7 days"]]) }) +
+            settingRow({ label: "Skip it when nothing is due", needs: "email_daily_digest", email: true, toggle: true,
+                control: toggleControl("digest_skip_empty") }) +
+            settingRow({ label: "Reminder before a task is due", hint: "Tasks with a date but no time count as 9:00 AM.", email: true,
+                control: selectControl("email_due_reminder", [["off", "Off"], ["15", "15 minutes before"], ["60", "1 hour before"], ["180", "3 hours before"], ["1440", "1 day before"]]) }) +
+            settingRow({ label: "When someone assigns me a task", email: true, toggle: true,
+                control: toggleControl("email_task_assigned") }) +
+            settingRow({ label: "When I'm invited to a project or list", email: true, toggle: true,
+                control: toggleControl("email_invites") });
+        return cardHtml("settingsNotifCard", "Email notifications", "Choose what Orderly emails you about.", body);
+    }
+
+    function calendarCardHtml() {
+        const f = settingsData.feed;
+        let host = "";
+        try { host = new URL(f.url).host; } catch (e) { host = f.url; }
+        let warn = "";
+        if (!f.public) {
+            warn = `<div class="settings-callout">This server's address (${escapeHtml(host)}) can't be reached from the internet, so Google and Microsoft can't read the link below yet. It will work once the server is online at a public address.</div>`;
+        } else if (!f.https) {
+            warn = `<div class="settings-callout">This link starts with http://. Google and Outlook may refuse it. Use an https:// address if you can.</div>`;
+        }
+        const durations = [["15", "15 minutes"], ["30", "30 minutes"], ["60", "1 hour"], ["90", "1½ hours"], ["120", "2 hours"]];
+        const alarms = [["none", "No reminder"], ["0", "At the time"], ["5", "5 minutes before"], ["10", "10 minutes before"],
+            ["15", "15 minutes before"], ["30", "30 minutes before"], ["60", "1 hour before"], ["120", "2 hours before"], ["1440", "1 day before"]];
+        const body =
+            settingRow({ label: "Which tasks go on the calendar?", hint: "Applies to the Calendar page and to the Google / Outlook link.",
+                control: selectControl("calendar_scope", SCOPE_OPTIONS) }) +
+            settingRow({ label: "Show completed tasks", toggle: true, control: toggleControl("calendar_show_completed") }) +
+            settingRow({ label: "Show repeating tasks on every day they come up", toggle: true, control: toggleControl("calendar_show_repeats") }) +
+            `<div class="settings-subhead">Link to Google Calendar or Outlook</div>
+             ${warn}
+             <div class="link-buttons">
+                <a class="btn btn-primary btn-small" href="${escapeHtml(f.google)}" target="_blank" rel="noopener">Add to Google Calendar</a>
+                <a class="btn btn-primary btn-small" href="${escapeHtml(f.outlook)}" target="_blank" rel="noopener">Add to Outlook.com</a>
+                <a class="btn btn-primary btn-small" href="${escapeHtml(f.outlook_work)}" target="_blank" rel="noopener">Microsoft 365 (work or school)</a>
+                <a class="btn btn-secondary btn-small" href="${escapeHtml(f.webcal)}">Apple Calendar</a>
+             </div>
+             <div class="copy-row">
+                <input type="text" id="feedUrl" readonly value="${escapeHtml(f.url)}">
+                <button class="btn btn-secondary btn-small" id="feedCopyBtn">Copy link</button>
+             </div>
+             <div class="settings-hint">Doing it by hand? In Google Calendar choose Other calendars → From URL. In Outlook choose Add calendar → Subscribe from web. Then paste the link.</div>
+             <div class="settings-hint" style="margin-top:6px;">Anyone with this link can see your task names, so keep it private. <button class="link-btn" id="feedResetBtn">Make a new link</button> to stop the old one working.</div>
+             <div class="settings-hint" style="margin-top:6px;">Google and Microsoft refresh linked calendars on their own schedule (Google can take several hours), so new changes may be slow to appear there.</div>` +
+            settingRow({ label: "Event length for tasks with a time", control: selectControl("calendar_event_minutes", durations) }) +
+            settingRow({ label: "Reminder on linked events", hint: "Some apps ignore this for linked calendars (Google does). All-day tasks count from 9:00 AM.",
+                control: selectControl("calendar_alarm", alarms) }) +
+            settingRow({ label: "Put the list name in the event title", toggle: true, control: toggleControl("calendar_include_list_name") });
+        return cardHtml("settingsCalendarCard", "Calendar", "Choose what shows up, and link it to your calendar app.", body);
+    }
+
+    function displayCardHtml() {
+        const body =
+            settingRow({ label: "Dark mode", toggle: true, control: themeToggleControl() }) +
+            settingRow({ label: "Time zone", hint: "Used for the daily digest, reminders and calendar times.", control: selectControl("timezone", timeZoneOptions()) }) +
+            settingRow({ label: "Time format", control: selectControl("time_format", [["12h", "12-hour (3:30 PM)"], ["24h", "24-hour (15:30)"]]) }) +
+            settingRow({ label: "Week starts on", control: selectControl("week_start", [["sun", "Sunday"], ["mon", "Monday"]]) }) +
+            settingRow({ label: "Priority for new tasks", control: selectControl("default_priority", [["low", "Low"], ["normal", "Normal"], ["high", "High"]]) }) +
+            settingRow({ label: "Show completed tasks in lists", toggle: true, control: toggleControl("show_completed_tasks") });
+        return cardHtml("settingsDisplayCard", "Display", "", body);
+    }
+
+    function renderSettingsPage() {
+        if (!settingsData) return;
+        const container = document.getElementById("settingsContainer");
+        container.innerHTML = emailCardHtml() + notificationsCardHtml() + calendarCardHtml() + displayCardHtml();
+
+        const themeSetting = document.getElementById("themeSettingToggle");
+        if (themeSetting) {
+            themeSetting.addEventListener("change", () => applyThemePreference(themeSetting.checked));
+        }
+
+        container.querySelectorAll("[data-setting]").forEach((el) => {
+            el.addEventListener("change", () => {
+                const key = el.dataset.setting;
+                if (el.type === "checkbox") return saveSetting(key, el.checked);
+                if (!el.value) { syncSettingsControls(); return; } // e.g. a cleared time box
+                saveSetting(key, el.value);
+            });
+        });
+        wireEmailCard();
+        wireCalendarCard();
+        syncSettingsDisabled();
+    }
+
+    async function withBusy(btn, fn) {
+        if (btn) btn.disabled = true;
+        try { await fn(); } catch (err) { showToast(err.message); } finally { if (btn) btn.disabled = false; }
+    }
+
+    function takePayload(res) {
+        settingsData = res;
+        appSettings = { ...appSettings, ...res.settings };
+        applySettings();
+        renderSettingsPage();
+    }
+
+    function wireEmailCard() {
+        const $ = (id) => document.getElementById(id);
+        const on = (id, fn) => { const el = $(id); if (el) el.addEventListener("click", () => withBusy(el, fn)); };
+        const enter = (id, btnId) => { const el = $(id); if (el) el.addEventListener("keydown", (ev) => { if (ev.key === "Enter") $(btnId).click(); }); };
+
+        on("emailSaveBtn", async () => {
+            const address = $("emailInput").value.trim();
+            if (!address) throw new Error("Enter an email address");
+            const res = await call("set_email", { email: address });
+            takePayload(res);
+            if (res.sent) showToast("We emailed you a 6-digit code.");
+            else if (res.error) showToast("Saved, but the code couldn't be sent: " + res.error);
+        });
+        on("emailVerifyBtn", async () => {
+            takePayload(await call("verify_email", { code: $("emailCodeInput").value }));
+            showToast("Email verified ✓");
+        });
+        on("emailResendBtn", async () => {
+            takePayload(await call("resend_email_code"));
+            showToast("New code sent.");
+        });
+        on("emailTestBtn", async () => {
+            await call("send_test_email");
+            showToast("Test email sent. Check your inbox.");
+        });
+        on("emailRemoveBtn", async () => takePayload(await call("remove_email")));
+        enter("emailInput", "emailSaveBtn");
+        enter("emailCodeInput", "emailVerifyBtn");
+    }
+
+    function wireCalendarCard() {
+        const copyBtn = document.getElementById("feedCopyBtn");
+        copyBtn.addEventListener("click", async () => {
+            const input = document.getElementById("feedUrl");
+            try { await navigator.clipboard.writeText(input.value); }
+            catch (e) { input.select(); document.execCommand("copy"); }
+            showToast("Link copied");
+        });
+        document.getElementById("feedResetBtn").addEventListener("click", () => {
+            if (!confirm("Make a new link? The old one will stop working, so you'll need to add the new one to your calendar app.")) return;
+            withBusy(null, async () => {
+                takePayload(await call("reset_calendar_link"));
+                showToast("New link made.");
+            });
+        });
+    }
+
+    // ============================================================
+    // Live events
+    // ============================================================
+    function removeListFromDashboard(listId) {
+        dashboard.standalone_lists = dashboard.standalone_lists.filter((l) => l.id !== listId);
+        dashboard.projects.forEach((p) => { p.lists = p.lists.filter((l) => l.id !== listId); });
+    }
+
+    function resortCurrentTasks() {
+        currentList.tasks.sort((a, b) => {
+            if (a.completed !== b.completed) return a.completed ? 1 : -1;
+            if (!a.completed) return a.id - b.id;
+            return (a.completed_at || "").localeCompare(b.completed_at || "");
+        });
+    }
+
+    function handleLiveEvent(msg) {
+        switch (msg.event) {
+            case "task_added":
+                if (currentList && currentList.id === msg.list_id && !currentList.tasks.some((t) => t.id === msg.task.id)) {
+                    currentList.tasks.push(msg.task);
+                    resortCurrentTasks();
+                    renderTasks();
+                }
+                if (currentView === "myTasks" && msg.task.assignee && msg.task.assignee.id === currentUser.id) openMyTasks();
+                break;
+
+            case "task_updated":
+                if (currentList && currentList.id === msg.list_id) {
+                    const idx = currentList.tasks.findIndex((t) => t.id === msg.task.id);
+                    if (idx >= 0) currentList.tasks[idx] = msg.task;
+                    else currentList.tasks.push(msg.task);
+                    resortCurrentTasks();
+                    renderTasks();
+                }
+                if (currentView === "myTasks") openMyTasks();
+                break;
+
+            case "task_deleted":
+                if (currentList && currentList.id === msg.list_id) {
+                    currentList.tasks = currentList.tasks.filter((t) => t.id !== msg.task_id);
+                    renderTasks();
+                }
+                if (currentView === "myTasks") openMyTasks();
+                break;
+
+            case "list_created": {
+                const p = findProject(msg.project_id);
+                if (p && !p.lists.some((l) => l.id === msg.list.id)) {
+                    p.lists.push(msg.list);
+                    renderSidebar();
+                }
+                break;
+            }
+
+            case "list_deleted":
+                removeListFromDashboard(msg.list_id);
+                if (currentList && currentList.id === msg.list_id) {
+                    showToast("This list was deleted.");
+                    currentList = null;
+                    switchView("welcome");
+                }
+                renderSidebar();
+                break;
+
+            case "list_member_added":
+                if (currentList && currentList.id === msg.list_id) {
+                    currentList.members = msg.members;
+                    renderListHeader();
+                    renderAssigneeOptions();
+                }
+            { const sl = findStandaloneList(msg.list_id); if (sl) sl.members = msg.members; }
+                break;
+
+            case "list_left":
+                removeListFromDashboard(msg.list_id);
+                if (currentList && currentList.id === msg.list_id) {
+                    currentList = null;
+                    switchView("welcome");
+                }
+                renderSidebar();
+                break;
+
+            case "list_invite_accepted":
+                if (!findStandaloneList(msg.list.id)) {
+                    dashboard.standalone_lists.push(msg.list);
+                    renderSidebar();
+                }
+                break;
+
+            case "project_member_added": {
+                const p = findProject(msg.project_id);
+                if (p) { p.members = msg.members; renderSidebar(); }
+                if (currentList && currentList.project && currentList.project.id === msg.project_id) {
+                    openList(currentList.id);
+                }
+                break;
+            }
+
+            case "project_invite_accepted":
+                if (!findProject(msg.project.id)) {
+                    dashboard.projects.push(msg.project);
+                    renderSidebar();
+                }
+                break;
+
+            case "project_deleted":
+                dashboard.projects = dashboard.projects.filter((p) => p.id !== msg.project_id);
+                if (currentList && currentList.project && currentList.project.id === msg.project_id) {
+                    showToast("This project was deleted.");
+                    currentList = null;
+                    switchView("welcome");
+                }
+                renderSidebar();
+                break;
+
+            case "settings_updated":
+                appSettings = { ...appSettings, ...msg.settings };
+                if (settingsData) settingsData.settings = msg.settings;
+                applySettings();
+                if (currentView === "settings") { syncSettingsControls(); syncSettingsDisabled(); }
+                break;
+
+            case "notification_created":
+                refreshNotifications();
+                showToast("You have a new notification");
+                break;
+        }
+    }
+</script>
+
+</body>
+</html>
