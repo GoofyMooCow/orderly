@@ -157,7 +157,7 @@
           color: #fff;
       }
 
-      .bell-wrap { position: relative; }
+      .bell-wrap { position: relative; z-index: 200; }
 
       .bell-btn {
           background: none;
@@ -191,20 +191,28 @@
       }
 
       .notif-panel {
-          position: absolute;
-          top: 38px;
+          position: fixed;
+          top: 0;
           left: 0;
-          width: 320px;
-          max-height: 420px;
+          width: min(320px, calc(100vw - 24px));
+          max-height: min(420px, calc(100vh - 24px));
           overflow-y: auto;
           background: var(--bg);
           color: var(--text);
           border-radius: 10px;
           box-shadow: 0 12px 30px rgba(0,0,0,0.35);
-          z-index: 150;
+          z-index: 250;
           display: none;
+          opacity: 0;
+          visibility: hidden;
+          pointer-events: none;
       }
-      .notif-panel.visible { display: block; }
+      .notif-panel.visible {
+          display: block;
+          opacity: 1;
+          visibility: visible;
+          pointer-events: auto;
+      }
       .notif-panel-header {
           padding: 12px 14px;
           font-weight: 600;
@@ -949,7 +957,17 @@
           #toastContainer { left: 8px; right: 8px; bottom: 8px; }
           .toast { max-width: none; }
 
-          .notif-panel { width: 92vw; max-width: 340px; left: -8px; }
+          .notif-panel {
+              position: fixed;
+              left: 10px;
+              right: 10px;
+              width: auto;
+              max-width: none;
+              min-width: 0;
+              top: 10px;
+              bottom: auto;
+              max-height: calc(100vh - 20px);
+          }
 
           .sort-menu { left: 0; min-width: 170px; }
 
@@ -988,10 +1006,6 @@
           <svg class="bell-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
           <span class="bell-badge" id="bellBadge" style="display:none;">0</span>
         </button>
-        <div class="notif-panel" id="notifPanel">
-          <div class="notif-panel-header">Notifications</div>
-          <div id="notifList"></div>
-        </div>
       </div>
     </div>
 
@@ -1687,8 +1701,12 @@
     // ============================================================
     const bellBtn = document.getElementById("bellBtn");
     const bellBadge = document.getElementById("bellBadge");
-    const notifPanel = document.getElementById("notifPanel");
-    const notifList = document.getElementById("notifList");
+    const notifPanel = document.createElement("div");
+    notifPanel.id = "notifPanel";
+    notifPanel.className = "notif-panel";
+    notifPanel.innerHTML = '<div class="notif-panel-header">Notifications</div><div id="notifList"></div>';
+    document.body.appendChild(notifPanel);
+    const notifList = notifPanel.querySelector("#notifList");
 
     async function refreshNotifications() {
         const data = await call("get_notifications");
@@ -1753,17 +1771,59 @@
         }
     }
 
+    function positionNotifPanel(force = false) {
+        if (!force && !notifPanel.classList.contains("visible")) return;
+
+        if (window.innerWidth <= 768) {
+            notifPanel.style.position = "fixed";
+            const rect = bellBtn.getBoundingClientRect();
+            const mobileTop = Math.max(rect.bottom + 8, 56);
+            notifPanel.style.left = "10px";
+            notifPanel.style.right = "10px";
+            notifPanel.style.top = `${mobileTop}px`;
+            notifPanel.style.width = "auto";
+            notifPanel.style.maxWidth = "none";
+            notifPanel.style.minWidth = "0";
+            notifPanel.style.bottom = "auto";
+            return;
+        }
+
+        const rect = bellBtn.getBoundingClientRect();
+        const pad = 12;
+        const panelWidth = Math.min(notifPanel.offsetWidth || 320, window.innerWidth - pad * 2);
+        const panelHeight = Math.min(notifPanel.offsetHeight || 300, window.innerHeight - pad * 2);
+        let left = rect.right - panelWidth + 6;
+        let top = rect.bottom + 8;
+        if (left < pad) left = pad;
+        if (left + panelWidth > window.innerWidth - pad) left = window.innerWidth - panelWidth - pad;
+        if (top + panelHeight > window.innerHeight - pad) top = window.innerHeight - panelHeight - pad;
+        notifPanel.style.left = `${left}px`;
+        notifPanel.style.top = `${top}px`;
+        notifPanel.style.right = "auto";
+        notifPanel.style.width = `${panelWidth}px`;
+        notifPanel.style.maxWidth = "none";
+        notifPanel.style.minWidth = "0";
+        notifPanel.style.bottom = "auto";
+    }
+
     bellBtn.addEventListener("click", async (e) => {
         e.stopPropagation();
         const willOpen = !notifPanel.classList.contains("visible");
-        notifPanel.classList.toggle("visible");
         if (willOpen) {
             renderNotifPanel();
+            positionNotifPanel(true);
+            notifPanel.classList.add("visible");
             await refreshNotifications();
+            requestAnimationFrame(() => positionNotifPanel(true));
+        } else {
+            notifPanel.classList.remove("visible");
         }
     });
     document.addEventListener("click", (e) => {
         if (!notifPanel.contains(e.target) && e.target !== bellBtn) notifPanel.classList.remove("visible");
+    });
+    window.addEventListener("resize", () => {
+        if (notifPanel.classList.contains("visible")) positionNotifPanel();
     });
 
     // ============================================================
@@ -1837,7 +1897,7 @@
         }
 
         const inviteBtn = e.target.closest(".invite-btn");
-        if (inviteBtn) { e.preventDefault(); openInviteProjectModal(Number(inviteBtn.dataset.project)); return; }
+        if (inviteBtn) { e.preventDefault(); closeSidebarIfMobile(); openInviteProjectModal(Number(inviteBtn.dataset.project)); return; }
 
         const deleteProjectBtn = e.target.closest(".delete-project-btn");
         if (deleteProjectBtn) { e.preventDefault(); await deleteProject(Number(deleteProjectBtn.dataset.project)); return; }
