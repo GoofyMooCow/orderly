@@ -368,6 +368,11 @@
 
       .icon-btn:hover { background: #3b5fc7; color: #fff; }
       .icon-btn.danger:hover { background: #b91c1c; color: #fff; }
+      @media (hover: none) {
+          .proj-header:hover { background: transparent; }
+          .icon-btn:hover { background: none; color: #c7d2fe; }
+          .icon-btn.danger:hover { background: none; }
+      }
 
       .proj-lists {
           padding-left: 18px;
@@ -543,33 +548,32 @@
       .task-item.completed .task-name { text-decoration: line-through; }
 
       .task-checkbox {
-          width: 19px;
-          height: 19px;
+          width: 22px;
+          height: 22px;
           border-radius: 50%;
           border: 2px solid #1e3a8a;
           cursor: pointer;
           flex-shrink: 0;
           appearance: none;
           -webkit-appearance: none;
-          display: flex;
-          align-items: center;
-          justify-content: center;
           margin: 0;
-          position: relative;
+          padding: 0;
+          background-color: transparent;
+          background-repeat: no-repeat;
+          background-position: center;
+          background-size: 0 0;
+          transition: background-color .18s, border-color .18s, background-size .18s cubic-bezier(.3,1.6,.5,1);
       }
       .dark .task-checkbox { border-color: #93c5fd; }
-      .task-checkbox:checked { background: #1e3a8a; border-color: #1e3a8a; }
-      .task-checkbox:checked::after {
-           content: "";
-           position: absolute;
-           width: 5px;
-           height: 10px;
-           border: solid #fff;
-           border-width: 0 2px 2px 0;
-           transform: translate(-50%, -50%) rotate(45deg);
-           top: 50%;
-           left: 50%;
+      .task-checkbox:hover { border-color: #3b5fc7; }
+      .task-checkbox:checked {
+          background-color: #1e3a8a;
+          border-color: #1e3a8a;
+          background-size: 14px 14px;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
       }
+      .dark .task-checkbox:checked { background-color: #3b82f6; border-color: #3b82f6; }
+      .task-checkbox:focus-visible { outline: 2px solid #3b82f6; outline-offset: 2px; }
 
       .task-name { flex: 1; font-size: 14.5px; cursor: pointer; }
 
@@ -976,6 +980,32 @@
           .priority-dot { order: 0; }
           .deadline-badge, .assignee-chip { order: 2; }
           .task-actions { order: 3; margin-left: auto; }
+          .proj-header { gap: 6px; padding: 6px 6px 6px 2px; }
+          .proj-header .proj-name { font-size: 15px; min-width: 0; }
+          .proj-header .member-count {
+              background: rgba(255,255,255,0.12);
+              border-radius: 10px;
+              padding: 2px 8px;
+              font-size: 12px;
+          }
+          .proj-header .icon-btn {
+              width: 40px;
+              height: 40px;
+              min-width: 40px;
+              min-height: 40px;
+              padding: 0;
+              font-size: 18px;
+              border-radius: 10px;
+              background: rgba(255,255,255,0.10);
+              color: #e0e7ff;
+              flex-shrink: 0;
+          }
+          .proj-header .icon-btn .icon-svg { width: 20px; height: 20px; }
+          .proj-header .icon-btn.invite-btn { background: rgba(96,165,250,0.22); color: #bfdbfe; }
+          .proj-header .icon-btn.danger { background: rgba(239,68,68,0.20); color: #fecaca; margin-left: 4px; }
+          .proj-header .icon-btn:active { background: #3b5fc7; color: #fff; }
+          .proj-header .icon-btn.danger:active { background: #b91c1c; color: #fff; }
+          .proj-header .collapse-btn { width: 28px; height: 36px; font-size: 14px; }
           .icon-btn {
               font-size: 20px;
               min-width: 36px;
