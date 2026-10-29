@@ -555,17 +555,20 @@
           align-items: center;
           justify-content: center;
           margin: 0;
+          position: relative;
       }
       .dark .task-checkbox { border-color: #93c5fd; }
       .task-checkbox:checked { background: #1e3a8a; border-color: #1e3a8a; }
       .task-checkbox:checked::after {
            content: "";
-           width: 7px;
-           height: 11px;
+           position: absolute;
+           width: 5px;
+           height: 10px;
            border: solid #fff;
            border-width: 0 2px 2px 0;
-           transform: rotate(45deg) translate(-1px, -1px);
-           display: block;
+           transform: translate(-50%, -50%) rotate(45deg);
+           top: 50%;
+           left: 50%;
       }
 
       .task-name { flex: 1; font-size: 14.5px; cursor: pointer; }
@@ -973,6 +976,17 @@
           .priority-dot { order: 0; }
           .deadline-badge, .assignee-chip { order: 2; }
           .task-actions { order: 3; margin-left: auto; }
+          .icon-btn {
+              font-size: 20px;
+              min-width: 36px;
+              min-height: 36px;
+              padding: 8px;
+              border-radius: 8px;
+          }
+          .icon-btn .icon-svg, .icon-svg {
+              width: 1.2em;
+              height: 1.2em;
+          }
 
           .modal-box { width: 88vw; max-width: 360px; }
           .field-row { flex-direction: column; }
