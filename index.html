@@ -349,6 +349,21 @@
           font-size: 13px;
           padding: 2px 5px;
           border-radius: 4px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+      }
+
+      .icon-btn .icon-svg, .icon-svg {
+          width: 1em;
+          height: 1em;
+          display: inline-block;
+          vertical-align: middle;
+          stroke: currentColor;
+          fill: none;
+          stroke-width: 2;
+          stroke-linecap: round;
+          stroke-linejoin: round;
       }
 
       .icon-btn:hover { background: #3b5fc7; color: #fff; }
@@ -543,7 +558,15 @@
       }
       .dark .task-checkbox { border-color: #93c5fd; }
       .task-checkbox:checked { background: #1e3a8a; border-color: #1e3a8a; }
-      .task-checkbox:checked::after { content: "✓"; color: #fff; font-size: 12px; }
+      .task-checkbox:checked::after {
+           content: "";
+           width: 7px;
+           height: 11px;
+           border: solid #fff;
+           border-width: 0 2px 2px 0;
+           transform: rotate(45deg) translate(-1px, -1px);
+           display: block;
+      }
 
       .task-name { flex: 1; font-size: 14.5px; cursor: pointer; }
 
@@ -752,6 +775,9 @@
       .dark .sort-option.active { color: #93c5fd; }
       .sort-option .check { opacity: 0; font-size: 12px; }
       .sort-option.active .check { opacity: 1; }
+      .sort-option .check .icon-svg,
+      .toast .icon-svg,
+      #settingsSaved .icon-svg { width: 1em; height: 1em; }
 
       /* ---------- Modal ---------- */
       .modal-overlay {
@@ -1433,7 +1459,7 @@
     // is completed moves it to its next future date instead of closing it.
     function repeatBadgeHtml(task) {
         return task.repeat
-            ? `<span class="repeat-badge" title="Repeats: ${escapeHtml(task.repeat)}">↻ ${escapeHtml(task.repeat)}</span>`
+            ? `<span class="repeat-badge" title="Repeats: ${escapeHtml(task.repeat)}">${iconSvg("repeat")} ${escapeHtml(task.repeat)}</span>`
             : "";
     }
 
@@ -1529,6 +1555,16 @@
         div.textContent = str ?? "";
         return div.innerHTML;
     }
+    function iconSvg(name) {
+        const icons = {
+            userPlus: '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 19v-1a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v1"/><circle cx="10" cy="7" r="3.5"/><path d="M18 8v6"/><path d="M15 11h6"/></svg>',
+            trash: '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/></svg>',
+            sparkles: '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 1.4 4.6L18 8l-4.6 1.4L12 14l-1.4-4.6L6 8l4.6-1.4L12 2Z"/><path d="m18.5 14 0.8 2.7L22 17.5l-2.7.8L18.5 21l-.8-2.7L15 17.5l2.7-.8L18.5 14Z"/><path d="m5.5 14 0.8 2.7L9 17.5l-2.7.8L5.5 21l-.8-2.7L2 17.5l2.7-.8L5.5 14Z"/></svg>',
+            check: '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7.5"/></svg>',
+            repeat: '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 13.1-6.1"/><path d="M18 4h2v4"/><path d="M20 12a8 8 0 0 1-13.1 6.1"/><path d="M6 20H4v-4"/></svg>'
+        };
+        return icons[name] || "";
+    }
     function pad2(n) { return String(n).padStart(2, "0"); }
     function dateToStr(d) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
     function todayStr() { return dateToStr(new Date()); }
@@ -1556,11 +1592,12 @@
         document.getElementById("profileName").textContent = currentUser.username;
     }
 
-    function showToast(text) {
+    function showToast(text, { icon } = {}) {
         const container = document.getElementById("toastContainer");
         const el = document.createElement("div");
         el.className = "toast";
-        el.textContent = text;
+        const safeText = escapeHtml(String(text ?? ""));
+        el.innerHTML = `${safeText}${icon ? ` ${iconSvg(icon)}` : ""}`;
         container.appendChild(el);
         setTimeout(() => el.remove(), 4200);
     }
@@ -1845,8 +1882,8 @@
                     <button class="collapse-btn" data-collapse="${p.id}" title="Collapse/expand">▾</button>
                     <span class="proj-name">${escapeHtml(p.name)}</span>
                     <span class="member-count">${p.members.length}</span>
-                    ${p.is_owner ? `<button class="icon-btn invite-btn" data-project="${p.id}" title="Invite a teammate">+👤</button>` : ""}
-                    ${p.is_owner ? `<button class="icon-btn danger delete-project-btn" data-project="${p.id}" title="Delete project">🗑</button>` : ""}
+                    ${p.is_owner ? `<button class="icon-btn invite-btn" data-project="${p.id}" title="Invite a teammate">${iconSvg("userPlus")}</button>` : ""}
+                    ${p.is_owner ? `<button class="icon-btn danger delete-project-btn" data-project="${p.id}" title="Delete project">${iconSvg("trash")}</button>` : ""}
                 </div>
                 <div class="proj-lists">
                     ${p.lists.map((l) => `<a href="#" class="list-link" data-list="${l.id}">${escapeHtml(l.name)}</a>`).join("")}
@@ -2034,7 +2071,7 @@
     function renderMyTasks(tasks) {
         const container = document.getElementById("myTasksContainer");
         if (!tasks.length) {
-            container.innerHTML = `<div class="empty-state">Nothing assigned to you right now 🎉</div>`;
+            container.innerHTML = `<div class="empty-state">Nothing assigned to you right now ${iconSvg("sparkles")}</div>`;
             return;
         }
         container.innerHTML = tasks.map((t) => {
@@ -2129,7 +2166,7 @@
                 <div class="calendar-tasks">
                     ${dayTasks.slice(0, 3).map(({ t, future }) => `
                         <div class="calendar-task-chip calendar-priority-${t.priority} ${future ? "calendar-future" : ""} ${t.completed ? "calendar-done" : ""}" data-list="${t.list_id}" title="${escapeHtml(t.name)}${t.assignee ? " · " + escapeHtml(t.assignee.username) : ""}${t.repeat ? " (repeats: " + escapeHtml(t.repeat) + ")" : ""}">
-                            ${t.repeat ? "↻ " : ""}${escapeHtml(t.name)}
+                            ${t.repeat ? iconSvg("repeat") + " " : ""}${escapeHtml(t.name)}
                         </div>
                     `).join("")}
                     ${dayTasks.length > 3 ? `<div class="calendar-more">+${dayTasks.length - 3} more</div>` : ""}
@@ -2174,7 +2211,7 @@
                     ${SORT_OPTIONS.map((opt) => `
                         <div class="sort-option ${opt.value === sortBy ? "active" : ""}" data-sort="${opt.value}">
                             <span>${escapeHtml(opt.label)}</span>
-                            <span class="check">✓</span>
+                            <span class="check">${iconSvg("check")}</span>
                         </div>
                     `).join("")}
                 </div>
@@ -2244,7 +2281,7 @@
         }
         const sortedTasks = getSortedTasksForDisplay();
         if (!sortedTasks.length) {
-            listEl.innerHTML = `<div class="empty-state">Everything here is done 🎉 Completed tasks are hidden (change this in Settings).</div>`;
+            listEl.innerHTML = `<div class="empty-state">Everything here is done ${iconSvg("sparkles")} Completed tasks are hidden (change this in Settings).</div>`;
             return;
         }
         listEl.innerHTML = sortedTasks.map(renderTaskItem).join("");
@@ -2285,7 +2322,7 @@
                 ${repeatBadgeHtml(t)}
                 ${t.assignee ? `<span class="assignee-chip">${avatarHtml(t.assignee.username, 18)}${escapeHtml(t.assignee.username)}</span>` : ""}
                 <div class="task-actions">
-                    <button class="icon-btn task-delete" data-task="${t.id}" title="Delete">🗑</button>
+                    <button class="icon-btn task-delete" data-task="${t.id}" title="Delete">${iconSvg("trash")}</button>
                 </div>
             </li>
         `;
@@ -2405,7 +2442,7 @@
     function flashSaved() {
         const el = document.getElementById("settingsSaved");
         if (!el) return;
-        el.textContent = "Saved ✓";
+        el.innerHTML = `Saved ${iconSvg("check")}`;
         el.classList.add("show");
         clearTimeout(savedTimer);
         savedTimer = setTimeout(() => el.classList.remove("show"), 1600);
@@ -2661,7 +2698,7 @@
         });
         on("emailVerifyBtn", async () => {
             takePayload(await call("verify_email", { code: $("emailCodeInput").value }));
-            showToast("Email verified ✓");
+            showToast("Email verified", { icon: "check" });
         });
         on("emailResendBtn", async () => {
             takePayload(await call("resend_email_code"));
