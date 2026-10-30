@@ -1523,6 +1523,38 @@
           .day-item-name { font-size: 15px; }
           .day-pill { font-size: 12px; }
       }
+
+      /* ---------- Scrollbars ---------- */
+      /* Thin, rounded and quiet. The colours follow light mode, dark mode and the dark blue sidebar. */
+      :root { --sb-thumb: rgba(100,116,139,0.45); }
+      .dark { --sb-thumb: rgba(148,163,184,0.40); }
+      .sidebar { --sb-thumb: rgba(199,210,254,0.32); }
+      * { scrollbar-width: thin; scrollbar-color: var(--sb-thumb) transparent; }
+      /* Older WebKit (Safari, older Android WebView) only understands the prefixed version. */
+      @supports not (scrollbar-color: auto) {
+          ::-webkit-scrollbar { width: 9px; height: 9px; }
+          ::-webkit-scrollbar-track { background: transparent; }
+          ::-webkit-scrollbar-thumb { background: var(--sb-thumb); border-radius: 9px; border: 2px solid transparent; background-clip: content-box; }
+          ::-webkit-scrollbar-thumb:hover { background-color: var(--sb-thumb); background-clip: content-box; border-width: 1px; }
+          ::-webkit-scrollbar-corner { background: transparent; }
+      }
+      /* Reaching the end of a menu or a window doesn't start scrolling the page behind it. */
+      .modal-scroll, .sidebar nav, .notif-panel { overscroll-behavior: contain; }
+
+      /* ---------- Invite links, leaving, removing ---------- */
+      .invite-banner { background: rgba(255,255,255,0.16); border-radius: 10px; padding: 10px 12px; font-size: 13.5px; line-height: 1.45; margin: 0 0 16px; text-align: center; }
+      .invite-switch { font-size: 13px; opacity: .85; margin-top: 4px; }
+      .link-btn { background: none; border: none; padding: 0; margin-left: 4px; font: inherit; color: #2563eb; cursor: pointer; text-decoration: underline; }
+      .dark .link-btn { color: #93c5fd; }
+      .link-section-title { font-size: 13px; font-weight: 600; margin: 18px 0 8px; opacity: .85; }
+      .link-row { padding: 10px 12px; border-radius: 10px; background: rgba(120,140,200,0.08); margin-bottom: 8px; }
+      .link-row .copy-row { margin: 0 0 6px; }
+      .link-meta { font-size: 12px; opacity: .7; line-height: 1.4; }
+      .link-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+      .link-empty { font-size: 13px; opacity: .65; padding: 4px 0; }
+      .link-make { margin-top: 10px; }
+      .person-remove { margin-left: auto; flex-shrink: 0; }
+      .people-foot { margin-top: 4px; display: flex; justify-content: flex-start; }
   </style>
 </head>
 
@@ -1821,6 +1853,56 @@
             };
         });
     }
+
+    // ============================================================
+    // Invite links
+    // A link looks like  .../?invite=TOKEN . The token is kept for this tab (so signing in or signing up,
+    // even a refresh, doesn't lose it) and taken out of the address bar. Once signed in, the person is
+    // asked to accept or decline (see handlePendingInvite).
+    // ============================================================
+    let pendingInvite = null;
+    (function captureInviteToken() {
+        let token = null;
+        try {
+            const fromQuery = new URLSearchParams(location.search).get("invite");
+            const fromHash = /[#&]invite=([^&]+)/.exec(location.hash);
+            token = fromQuery || (fromHash ? decodeURIComponent(fromHash[1]) : null);
+            if (token) {
+                sessionStorage.setItem("pendingInvite", token);
+                const url = new URL(location.href);
+                url.searchParams.delete("invite");
+                if (fromHash) url.hash = "";
+                history.replaceState(history.state, "", url.pathname + url.search + url.hash);
+            } else {
+                token = sessionStorage.getItem("pendingInvite");
+            }
+        } catch (e) {}
+        pendingInvite = token ? String(token).slice(0, 200) : null;
+    })();
+
+    function clearPendingInvite() {
+        pendingInvite = null;
+        try { sessionStorage.removeItem("pendingInvite"); } catch (e) {}
+    }
+
+    // On the sign-in card: say what the link is for, so signing in or up has a reason.
+    (async function showInviteBanner() {
+        if (!pendingInvite || authToken) return;
+        const banner = document.createElement("div");
+        banner.className = "invite-banner";
+        banner.textContent = "You've been invited to join something on Orderly. Sign in or sign up to see the invite.";
+        authCard.insertBefore(banner, authCard.firstChild);
+        try {
+            const r = await wsRequestOnce(WS_BASE + "/invites/preview", { token: pendingInvite });
+            if (r.status === "ok") {
+                const who = r.inviter ? r.inviter : "Someone";
+                banner.textContent = `${who} invited you to join the ${r.kind} “${r.name}”. Sign in or sign up to accept or decline.`;
+            } else {
+                banner.textContent = r.message || "That invite link isn't valid any more.";
+                clearPendingInvite();
+            }
+        } catch (e) { /* keep the generic text; the link is still kept */ }
+    })();
 
     button.onclick = async () => {
         if (authMode === "forgot") {
@@ -2129,6 +2211,7 @@
             reconnectAttempt = 0;
             startHeartbeat();
             setOffline(false);
+            handlePendingInvite().catch(() => {});
         } catch (err) {
             if (err && err.authFailed) { handleAuthFailure(err); return; }
             // A connection that opens but never answers is as good as dead: throw it away and start fresh next time.
@@ -2198,7 +2281,7 @@
             if (err && err.offline) throw err;
             if (currentView === "list") {
                 currentList = null;
-                switchView("welcome");
+                switchView("welcome", { replace: true });
                 renderSidebar();
                 showToast("That list isn't available any more.");
             }
@@ -2207,6 +2290,7 @@
 
     function enterApp() {
         sessionActive = true;
+        navInit();
         authCard.style.display = "none";
         appEl.classList.add("visible");
         document.body.style.background = "#f8f9fb";
@@ -2217,6 +2301,7 @@
             .then(() => {
                 synced = true;
                 startHeartbeat();
+                handlePendingInvite().catch(() => {});
                 const e = settingsData && settingsData.email;
                 if (!e || !e.address || e.verified) { pendingEmailNotice = false; return; }
                 if (pendingEmailNotice && settingsData.email_service) {
@@ -2318,6 +2403,81 @@
         location.reload();
     });
 
+    // ============================================================
+    // Back button (the phone's back arrow, the browser's back button, a swipe back)
+    // Every screen you open (a list, My Tasks, Calendar, Settings) is one history entry, so back returns
+    // to the screen before it. Anything open on top (a window, a confirm box, the notifications, the Lists
+    // sheet) is closed first, and you stay on the screen you were on. Back from the first screen leaves the
+    // page, as usual. The address never changes, so invite links and reloads are unaffected.
+    // ============================================================
+    let navReady = false;
+    let navRestoring = 0;
+
+    function navState() {
+        return { orderly: 1, view: currentView, listId: currentView === "list" && currentList ? currentList.id : null };
+    }
+    function navInit() {
+        if (navReady) return;
+        try {
+            history.replaceState({ orderly: 1, base: true }, "");   // a stop below the first screen, so back can close windows there too
+            history.pushState(navState(), "");
+            navReady = true;
+        } catch (e) { navReady = false; }
+    }
+    function navSync(replace) {
+        if (!navReady || navRestoring) return;
+        const next = navState();
+        const cur = history.state;
+        if (cur && cur.orderly && !cur.base && cur.view === next.view && cur.listId === next.listId) return;   // same screen refreshed
+        try {
+            if (replace && cur && cur.orderly && !cur.base) history.replaceState(next, "");
+            else history.pushState(next, "");
+        } catch (e) {}
+    }
+    // Closes the top-most thing sitting over the screen. Returns false when there was nothing to close.
+    function closeTopLayer() {
+        if (dlgOverlay.classList.contains("visible")) { closeDialog(false); return true; }
+        if (modalOverlay.classList.contains("visible")) { closeModal(); return true; }
+        if (notifPanel.classList.contains("visible")) { notifPanel.classList.remove("visible"); return true; }
+        const sortMenu = document.getElementById("sortMenu");
+        if (sortMenu && sortMenu.classList.contains("visible")) { sortMenu.classList.remove("visible"); return true; }
+        if (sidebarEl.classList.contains("mobile-open")) { closeSidebar(); return true; }
+        return false;
+    }
+    async function showNavState(s) {
+        try {
+            if (s.view === "list" && s.listId) await openList(s.listId);
+            else if (s.view === "myTasks") await openMyTasks();
+            else if (s.view === "calendar") await openCalendar();
+            else if (s.view === "settings") await openSettings();
+            else { currentList = null; switchView("welcome"); renderSidebar(); }
+        } catch (err) {
+            // Couldn't get there (the list is gone, or the connection is down): stay on what's showing.
+            if (!(err && err.offline) && s.view === "list") {
+                currentList = null;
+                switchView("welcome");
+                renderSidebar();
+                showToast("That list isn't available any more.");
+            } else if (err && err.offline) {
+                showToast(err.message);
+            }
+            try { history.replaceState(navState(), ""); } catch (e) {}
+        }
+    }
+    window.addEventListener("popstate", async (e) => {
+        if (!navReady) return;
+        const s = e.state;
+        if (!s || !s.orderly) return;
+        if (closeTopLayer()) {
+            try { history.pushState(navState(), ""); } catch (err) {}   // put the screen back; only the window closed
+            return;
+        }
+        if (s.base) { history.back(); return; }   // nothing earlier in the app: let the browser or phone take it
+        navRestoring++;
+        try { await showNavState(s); }
+        finally { navRestoring--; }
+    });
+
     if (authToken) enterApp();
 
     // ============================================================
@@ -2386,12 +2546,15 @@
         setTimeout(() => el.remove(), 4200);
     }
 
-    function switchView(view) {
+    // { replace: true } is for being sent away from a screen (it was deleted, you left): the back button
+    // should skip over it instead of returning to it.
+    function switchView(view, opts) {
         currentView = view;
         updateBottomNav();
         document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
         document.getElementById(view + "View").classList.add("active");
         document.querySelectorAll(".list-link, .my-tasks-link, .calendar-link, .settings-link").forEach((a) => a.classList.remove("active"));
+        navSync(!!(opts && opts.replace));
     }
 
     // ---------- Relative time (for notifications) ----------
@@ -2862,6 +3025,7 @@
                     <button class="member-count" data-members-project="${p.id}" title="People and permissions" aria-label="${p.members.length} ${p.members.length === 1 ? "person" : "people"}. Open people and permissions">${iconSvg("users")} ${p.members.length}</button>
                     ${p.is_owner ? `<button class="icon-btn invite-btn" data-project="${p.id}" title="Invite a teammate">${iconSvg("userPlus")}</button>` : ""}
                     ${p.is_owner ? `<button class="icon-btn danger delete-project-btn" data-project="${p.id}" title="Delete project">${iconSvg("trash")}</button>` : ""}
+                    ${p.is_owner ? "" : `<button class="icon-btn danger leave-project-btn" data-project="${p.id}" title="Leave project" aria-label="Leave project">${iconSvg("logout")}</button>`}
                 </div>
                 <div class="proj-lists">
                     ${p.lists.map((l) => `<a href="#" class="list-link" data-list="${l.id}">${escapeHtml(l.name)}</a>`).join("")}
@@ -2917,6 +3081,9 @@
         const inviteBtn = e.target.closest(".invite-btn");
         if (inviteBtn) { e.preventDefault(); closeSidebarIfMobile(); openInviteProjectModal(Number(inviteBtn.dataset.project)); return; }
 
+        const leaveProjectBtn = e.target.closest(".leave-project-btn");
+        if (leaveProjectBtn) { e.preventDefault(); await leaveProject(Number(leaveProjectBtn.dataset.project)); return; }
+
         const deleteProjectBtn = e.target.closest(".delete-project-btn");
         if (deleteProjectBtn) { e.preventDefault(); await deleteProject(Number(deleteProjectBtn.dataset.project)); return; }
 
@@ -2942,12 +3109,42 @@
             dashboard.projects = dashboard.projects.filter((x) => x.id !== projectId);
             if (currentList && currentList.project && currentList.project.id === projectId) {
                 currentList = null;
-                switchView("welcome");
+                switchView("welcome", { replace: true });
             }
             renderSidebar();
             showToast(`"${name}" deleted`);
         } catch (err) {
             reportError(err, "Couldn't delete the project");
+        }
+    }
+
+    // Take a project off this screen (after leaving it, being removed from it, or the owner deleting it).
+    function removeProjectLocally(projectId) {
+        dashboard.projects = dashboard.projects.filter((p) => p.id !== projectId);
+        if (currentList && currentList.project && currentList.project.id === projectId) {
+            currentList = null;
+            switchView("welcome", { replace: true });
+        }
+        renderSidebar();
+        if (currentView === "myTasks" || currentView === "calendar") refreshCurrentView().catch(() => {});
+    }
+
+    async function leaveProject(projectId) {
+        const p = findProject(projectId);
+        const name = p ? p.name : "this project";
+        const ok = await confirmDialog({
+            title: `Leave "${name}"?`,
+            message: "You'll lose access to the project and all of its lists unless the owner invites you again. Tasks assigned to you will become unassigned.",
+            confirmLabel: "Leave project",
+            danger: true,
+        });
+        if (!ok) return;
+        try {
+            await call("leave_project", { project_id: projectId });
+            removeProjectLocally(projectId);
+            showToast(`Left "${name}"`);
+        } catch (err) {
+            reportError(err, "Couldn't leave the project");
         }
     }
 
@@ -3113,6 +3310,7 @@
             fields: [
                 { id: "username", label: "Username", placeholder: "their account username" },
                 { id: "access", label: "What can they do?", type: "custom", build: () => accessPicker({ scope: "project" }) },
+                { id: "viaLink", label: "", type: "custom", build: () => inviteLinkSwitch("project", projectId) },
             ],
             submitLabel: "Send Invite",
             onSubmit: async (v) => {
@@ -3129,6 +3327,7 @@
             fields: [
                 { id: "username", label: "Username", placeholder: "their account username" },
                 { id: "access", label: "What can they do?", type: "custom", build: () => accessPicker({ scope: "list" }) },
+                { id: "viaLink", label: "", type: "custom", build: () => inviteLinkSwitch("list", listId) },
             ],
             submitLabel: "Send Invite",
             onSubmit: async (v) => {
@@ -3137,6 +3336,184 @@
                 showToast(`Invite sent to ${v.username}`);
             },
         });
+    }
+
+    function inviteLinkSwitch(scope, id) {
+        const el = document.createElement("div");
+        el.className = "invite-switch";
+        el.innerHTML = `<span>Don't know their username?</span><button type="button" class="link-btn">Invite with a link instead</button>`;
+        el.querySelector("button").onclick = () => { closeModal(); openInviteLinkModal(scope, id); };
+        return { el, getValue: () => null };
+    }
+
+    async function copyText(text, input) {
+        try { await navigator.clipboard.writeText(text); return true; }
+        catch (e) {
+            try { if (input) { input.focus(); input.select(); } return document.execCommand("copy"); }
+            catch (e2) { return false; }
+        }
+    }
+
+    function expiryText(iso) {
+        if (!iso) return "doesn't expire";
+        const ms = new Date(iso + (iso.endsWith("Z") ? "" : "Z")).getTime() - Date.now();
+        if (ms <= 0) return "expired";
+        const hours = Math.floor(ms / 3600000);
+        if (hours < 1) return "expires in under an hour";
+        if (hours < 48) return `expires in ${hours} hour${hours === 1 ? "" : "s"}`;
+        return `expires in ${Math.floor(hours / 24)} days`;
+    }
+
+    // Make, copy and turn off the invite links of a project (or a standalone list).
+    async function openInviteLinkModal(scope, id) {
+        const key = scope === "project" ? { project_id: id } : { list_id: id };
+        let links;
+        try { links = (await call("list_invite_links", key)).links; }
+        catch (err) { reportError(err, "Couldn't load invite links"); return; }
+
+        const picker = accessPicker({ scope });
+        const wrap = document.createElement("div");
+        const accessField = document.createElement("div");
+        accessField.className = "field";
+        accessField.innerHTML = `<label>What can people who join do?</label>`;
+        accessField.appendChild(picker.el);
+        const expiryField = document.createElement("div");
+        expiryField.className = "field";
+        expiryField.innerHTML = `<label>How long does the link work?</label>
+            <select aria-label="Link expiry">
+                <option value="1">1 day</option>
+                <option value="7" selected>7 days</option>
+                <option value="30">30 days</option>
+                <option value="never">Until I turn it off</option>
+            </select>`;
+        const makeBtn = document.createElement("button");
+        makeBtn.type = "button";
+        makeBtn.className = "btn btn-primary link-make";
+        makeBtn.textContent = "Create link";
+        const title = document.createElement("div");
+        title.className = "link-section-title";
+        title.textContent = "Active links";
+        const listEl = document.createElement("div");
+        wrap.append(accessField, expiryField, makeBtn, title, listEl);
+
+        function renderLinks() {
+            listEl.innerHTML = "";
+            if (!links.length) { listEl.innerHTML = `<div class="link-empty">No active links yet.</div>`; return; }
+            links.forEach((lk) => {
+                const row = document.createElement("div");
+                row.className = "link-row";
+                row.innerHTML = `<div class="copy-row"><input type="text" readonly aria-label="Invite link"><button type="button" class="btn btn-secondary btn-small" data-act="copy">Copy</button></div>
+                    <div class="link-meta"></div>
+                    <div class="link-actions"></div>`;
+                const input = row.querySelector("input");
+                input.value = lk.url;
+                input.addEventListener("focus", () => input.select());
+                row.querySelector(".link-meta").textContent = `${roleLabel(lk.access.role)} · ${expiryText(lk.expires_at)}`;
+                row.querySelector('[data-act="copy"]').onclick = async () => {
+                    showToast((await copyText(lk.url, input)) ? "Link copied" : "Press and hold the link to copy it");
+                };
+                const actions = row.querySelector(".link-actions");
+                if (navigator.share) {
+                    const share = document.createElement("button");
+                    share.type = "button";
+                    share.className = "btn btn-secondary btn-small";
+                    share.textContent = "Share…";
+                    share.onclick = () => { navigator.share({ title: "Join me on Orderly", url: lk.url }).catch(() => {}); };
+                    actions.appendChild(share);
+                }
+                const off = document.createElement("button");
+                off.type = "button";
+                off.className = "btn btn-danger btn-small";
+                off.textContent = "Turn off";
+                off.onclick = async () => {
+                    const ok = await confirmDialog({
+                        title: "Turn off this link?",
+                        message: "Nobody will be able to join with it any more. People who already joined stay.",
+                        confirmLabel: "Turn off",
+                        danger: true,
+                    });
+                    if (!ok) return;
+                    try {
+                        await call("revoke_invite_link", { link_id: lk.id });
+                        links = links.filter((x) => x.id !== lk.id);
+                        renderLinks();
+                    } catch (err) { reportError(err, "Couldn't turn off the link"); }
+                };
+                actions.appendChild(off);
+                listEl.appendChild(row);
+            });
+        }
+        renderLinks();
+
+        makeBtn.onclick = async () => {
+            if (makeBtn.disabled) return;
+            makeBtn.disabled = true;
+            try {
+                const a = picker.getValue();
+                const days = expiryField.querySelector("select").value;
+                const data = await call("create_invite_link", { ...key, role: a.role, perms: a.perms, expires_days: days === "never" ? null : Number(days) });
+                links.unshift(data.link);
+                renderLinks();
+                const copied = await copyText(data.link.url, listEl.querySelector("input"));
+                showToast(copied ? "Link created and copied" : "Link created. Tap Copy to copy it.");
+            } catch (err) {
+                reportError(err, "Couldn't create the link");
+            } finally {
+                makeBtn.disabled = false;
+            }
+        };
+
+        openModal({
+            title: "Invite link",
+            intro: "Anyone who opens the link can accept or decline. If they aren't signed in, they can sign in or sign up first.",
+            wide: true,
+            fields: [{ id: "links", label: "", type: "custom", build: () => ({ el: wrap, getValue: () => null }) }],
+            cancelLabel: "Close",
+            hideSubmit: true,
+            onSubmit: async () => {},
+        });
+    }
+
+    // Someone opened an invite link: show who invited them and let them accept or decline.
+    async function handlePendingInvite() {
+        const token = pendingInvite;
+        if (!token || !currentUser) return;
+        let info;
+        try {
+            info = await call("preview_invite_link", { token });
+        } catch (err) {
+            if (err && err.offline) return;   // try again when the connection is back; the link is still kept
+            clearPendingInvite();
+            await alertDialog({ title: "Invite link", message: err && err.message ? err.message : "This invite link isn't valid any more." });
+            return;
+        }
+        clearPendingInvite();
+        if (info.already_member) { showToast(`You're already part of “${info.name}”.`); return; }
+        const scope = info.kind === "project" ? "project" : "list";
+        const accept = await showDialog({
+            title: `Join “${info.name}”?`,
+            message: `${info.inviter || "Someone"} invited you to join the ${scope} “${info.name}”.\n\nYour access: ${describeAccess(info.access.role, info.access.perms, scope)}`,
+            okLabel: "Accept",
+            cancelLabel: "Decline",
+            icon: "users",
+        });
+        if (!accept) { showToast("Invite declined"); return; }
+        try {
+            const res = await call("respond_invite_link", { token, accept: true });
+            await loadDashboard();
+            refreshNotifications().catch(() => {});
+            showToast(`You joined “${info.name}”`);
+            if (currentView === "welcome") {
+                let listId = res.list_id;
+                if (!listId && res.project_id) {
+                    const p = findProject(res.project_id);
+                    listId = p && p.lists.length ? p.lists[0].id : null;
+                }
+                if (listId) await openList(listId);
+            }
+        } catch (err) {
+            reportError(err, "Couldn't join");
+        }
     }
 
     // Everyone on a project or a shared list, with what each person may do. The owner can change it here, any time.
@@ -3156,7 +3533,28 @@
             const row = document.createElement("div");
             row.className = "person-row";
             const tag = m.is_owner ? "Owner" : (m.id === currentUser.id ? "You" : "");
-            row.innerHTML = `<div class="person-head">${avatarHtml(m.username, 30)}<span class="person-name">${escapeHtml(m.username)}</span>${tag ? `<span class="person-tag">${tag}</span>` : ""}</div>`;
+            row.innerHTML = `<div class="person-head">${avatarHtml(m.username, 30)}<span class="person-name">${escapeHtml(m.username)}</span>${tag ? `<span class="person-tag">${tag}</span>` : ""}${canEdit && !m.is_owner ? `<button type="button" class="btn btn-danger btn-small person-remove">Remove</button>` : ""}</div>`;
+            const removeBtn = row.querySelector(".person-remove");
+            if (removeBtn) removeBtn.onclick = async () => {
+                const ok = await confirmDialog({
+                    title: `Remove ${m.username}?`,
+                    message: scope === "project"
+                        ? `${m.username} will lose access to "${box.name}" and every list in it. Tasks assigned to them will become unassigned.`
+                        : `${m.username} will lose access to "${box.name}". Tasks assigned to them will become unassigned.`,
+                    confirmLabel: "Remove",
+                    danger: true,
+                });
+                if (!ok) return;
+                try {
+                    await call("remove_member", scope === "project" ? { project_id: id, user_id: m.id } : { list_id: id, user_id: m.id });
+                    pickers.delete(m.id);      // so "Save changes" doesn't try to update someone who's gone
+                    originals.delete(m.id);
+                    row.remove();
+                    showToast(`${m.username} removed`);
+                } catch (err) {
+                    reportError(err, "Couldn't remove that person");
+                }
+            };
             if (m.is_owner) {
                 row.insertAdjacentHTML("beforeend", `<div class="person-access">Full control</div>`);
             } else if (canEdit) {
@@ -3171,6 +3569,17 @@
         });
 
         const me = members.find((m) => m.id === currentUser.id);
+        if (!canEdit && me) {
+            const foot = document.createElement("div");
+            foot.className = "people-foot";
+            foot.innerHTML = `<button type="button" class="btn btn-danger btn-small">${scope === "project" ? "Leave project" : "Leave list"}</button>`;
+            foot.querySelector("button").onclick = () => {
+                closeModal();
+                if (scope === "project") leaveProject(id);
+                else leaveList(id, box.name);
+            };
+            list.appendChild(foot);
+        }
         let intro;
         if (canEdit) {
             intro = members.length > 1
@@ -3233,7 +3642,7 @@
             await call("leave_list", { list_id: listId });
             dashboard.standalone_lists = dashboard.standalone_lists.filter((l) => l.id !== listId);
             currentList = null;
-            switchView("welcome");
+            switchView("welcome", { replace: true });
             renderSidebar();
             showToast(`Left "${listName}"`);
         } catch (err) {
@@ -3622,6 +4031,9 @@
         } else if (!currentList.is_owner && !currentList.project) {
             html += `<button class="btn btn-danger btn-small" id="leaveListBtn">Leave List</button>`;
         }
+        if (currentList.project && !currentList.project.is_owner) {
+            html += `<button class="btn btn-danger btn-small" id="leaveProjectBtn">Leave Project</button>`;
+        }
         actions.innerHTML = html;
 
         const sortBtn = document.getElementById("sortBtn");
@@ -3645,6 +4057,9 @@
         const shareBtn = document.getElementById("shareListBtn");
         if (shareBtn) shareBtn.onclick = () => openShareListModal(currentList.id);
 
+        const leaveProjectBtn = document.getElementById("leaveProjectBtn");
+        if (leaveProjectBtn) leaveProjectBtn.onclick = () => leaveProject(currentList.project.id);
+
         const leaveBtn = document.getElementById("leaveListBtn");
         if (leaveBtn) leaveBtn.onclick = () => leaveList(currentList.id, currentList.name);
 
@@ -3665,7 +4080,7 @@
                 removeListFromDashboard(list.id);
                 if (currentList && currentList.id === list.id) {
                     currentList = null;
-                    switchView("welcome");
+                    switchView("welcome", { replace: true });
                 }
                 renderSidebar();
             } catch (err) {
@@ -4236,7 +4651,7 @@
                 if (currentList && currentList.id === msg.list_id) {
                     showToast("This list was deleted.");
                     currentList = null;
-                    switchView("welcome");
+                    switchView("welcome", { replace: true });
                 }
                 renderSidebar();
                 break;
@@ -4254,9 +4669,15 @@
                 removeListFromDashboard(msg.list_id);
                 if (currentList && currentList.id === msg.list_id) {
                     currentList = null;
-                    switchView("welcome");
+                    switchView("welcome", { replace: true });
                 }
                 renderSidebar();
+                if (msg.reason === "removed") showToast(`You were removed from "${msg.name}".`);
+                break;
+
+            case "project_left":
+                removeProjectLocally(msg.project_id);
+                if (msg.reason === "removed") showToast(`You were removed from "${msg.name}".`);
                 break;
 
             case "list_invite_accepted":
@@ -4287,7 +4708,7 @@
                 if (currentList && currentList.project && currentList.project.id === msg.project_id) {
                     showToast("This project was deleted.");
                     currentList = null;
-                    switchView("welcome");
+                    switchView("welcome", { replace: true });
                 }
                 renderSidebar();
                 break;
