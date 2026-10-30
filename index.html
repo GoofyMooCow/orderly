@@ -14,6 +14,7 @@
           --bg: #f8fafc;
           --text: #00205c;
           --sidebar-bg: #1e3a8a;
+          --nav-h: calc(60px + env(safe-area-inset-bottom, 0px));
       }
 
       .dark {
@@ -172,9 +173,26 @@
       }
       .bell-btn:hover { background: #2c4ea8; color: #fff; }
       .bell-icon { display: block; pointer-events: none; }
-
-      .bell-badge {
-          position: absolute;
+      .mobile-bell-btn {
+          display: none;
+          position: fixed;
+          top: calc(14px + env(safe-area-inset-top, 0px));
+          right: 14px;
+          z-index: 180;
+          width: 48px;
+          height: 48px;
+          border: none;
+          border-radius: 50%;
+          background: #1e3a8a;
+          color: #fff;
+          box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25);
+          cursor: pointer;
+          display: none;
+          align-items: center;
+          justify-content: center;
+      }
+      .mobile-bell-btn .bell-icon { width: 20px; height: 20px; }
+      .bell-badge {          position: absolute;
           top: 0;
           right: 0;
           background: #ef4444;
@@ -339,7 +357,14 @@
       .proj-header .member-count {
           font-size: 11px;
           color: #a8b8ec;
+          background: none;
+          border: none;
+          font-family: inherit;
+          cursor: pointer;
+          border-radius: 10px;
+          padding: 2px 6px;
       }
+      .proj-header .member-count:hover { background: rgba(255,255,255,0.14); color: #fff; }
 
       .icon-btn {
           background: none;
@@ -516,6 +541,9 @@
           padding: 12px;
           border-radius: 10px;
       }
+      .add-main, .add-opts { display: contents; }
+      .add-opts-toggle { display: none; }
+      .add-task-bar #addTaskBtn { order: 10; }
       .add-task-bar input[type="text"] { flex: 2; min-width: 160px; }
       .add-task-bar input, .add-task-bar select {
           padding: 9px 10px;
@@ -627,6 +655,19 @@
       .assignee-chip .avatar { width: 18px; height: 18px; font-size: 9px; margin: 0; border: none; }
 
       .task-actions { display: flex; gap: 4px; }
+      .task-meta { display: contents; }
+      .task-name.readonly { cursor: default; }
+      .task-checkbox:disabled { cursor: not-allowed; opacity: .5; }
+      .mytask-name { flex: 1; }
+
+      .access-note {
+          font-size: 13px;
+          padding: 10px 12px;
+          margin-bottom: 14px;
+          border-radius: 8px;
+          background: rgba(120,140,200,0.10);
+          opacity: .9;
+      }
 
       .empty-state { text-align: center; opacity: .55; padding: 40px 0; font-size: 14px; }
 
@@ -794,7 +835,7 @@
           display: none;
           align-items: center;
           justify-content: center;
-          z-index: 100;
+          z-index: 160;
       }
       .modal-overlay.visible { display: flex; }
       .modal-box {
@@ -803,11 +844,24 @@
           border-radius: 12px;
           padding: 24px;
           width: 340px;
+          max-height: 75vh;
+          max-width: calc(100vw - 24px);
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          box-sizing: border-box;
           box-shadow: 0 12px 30px rgba(0,0,0,0.3);
       }
+      .modal-box.wide { width: 520px; }
       .modal-box h3 { margin: 0 0 16px; }
+      .modal-scroll {
+          flex: 1 1 auto;
+          min-height: 0;
+          overflow-y: auto;
+          padding-right: 4px;
+      }
+      .modal-scroll .day-nav { margin-top: 0; }
       .field { margin-bottom: 14px; }
-      .field label { display: block; font-size: 12.5px; margin-bottom: 5px; opacity: .75; }
       .field input, .field select {
           width: 100%;
           padding: 9px 10px;
@@ -822,7 +876,126 @@
       .field-row .field { flex: 1; }
       .dark .field input, .dark .field select { background: #1e293b; color: #f1f5f9; border-color: #334155; }
       .modal-error { color: #dc2626; font-size: 12.5px; margin-bottom: 10px; min-height: 14px; }
-      .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+      .modal-actions {
+          display: flex;
+          justify-content: flex-end;
+          gap: 8px;
+          margin-top: 6px;
+          flex-shrink: 0;
+          background: var(--bg);
+          padding-top: 10px;
+      }
+      .modal-actions[hidden] { display: none !important; }
+
+      /* ---------- Confirm / message dialogs ---------- */
+      .dlg-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0,0,0,0.5);
+          display: none;
+          align-items: center;
+          justify-content: center;
+          padding: 16px;
+          z-index: 300;
+      }
+      .dlg-overlay.visible { display: flex; animation: dlgFade .15s ease; }
+      .dlg {
+          background: var(--bg);
+          color: var(--text);
+          border-radius: 14px;
+          padding: 22px 22px 18px;
+          width: 100%;
+          max-width: 400px;
+          box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+          animation: dlgPop .18s ease;
+      }
+      .dlg-icon {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 12px;
+          background: rgba(59,130,246,0.15);
+          color: #2563eb;
+      }
+      .dark .dlg-icon { color: #93c5fd; }
+      .dlg-icon .icon-svg { width: 22px; height: 22px; }
+      .dlg.danger .dlg-icon { background: rgba(220,38,38,0.14); color: #dc2626; }
+      .dark .dlg.danger .dlg-icon { color: #fca5a5; }
+      .dlg h3 { margin: 0 0 6px; font-size: 1.1rem; line-height: 1.3; }
+      .dlg p { margin: 0 0 18px; font-size: 14px; line-height: 1.5; opacity: .85; white-space: pre-line; overflow-wrap: anywhere; }
+      .dlg-actions { display: flex; justify-content: flex-end; gap: 8px; }
+      .btn-danger-solid { background: #dc2626; color: #fff; }
+      .btn-danger-solid:hover { background: #b91c1c; }
+      .btn:focus-visible, .dlg button:focus-visible { outline: 2px solid #3b82f6; outline-offset: 2px; }
+      @keyframes dlgFade { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes dlgPop { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+      @keyframes sheetUp { from { transform: translateY(30px); opacity: .6; } to { transform: none; opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) {
+          .dlg-overlay.visible, .dlg, .modal-box, .toast { animation: none !important; }
+      }
+
+      /* ---------- Connection banner ---------- */
+      .conn-banner {
+          position: fixed;
+          top: 10px;
+          top: calc(10px + env(safe-area-inset-top, 0px));
+          left: 50%;
+          transform: translate(-50%, -140%);
+          opacity: 0;
+          pointer-events: none;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          max-width: calc(100vw - 24px);
+          background: #1e293b;
+          color: #fff;
+          padding: 9px 10px 9px 14px;
+          border-radius: 999px;
+          font-size: 13px;
+          box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+          z-index: 250;
+          transition: transform .25s ease, opacity .25s ease;
+      }
+      .conn-banner.visible { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
+      .conn-dot { width: 9px; height: 9px; border-radius: 50%; background: #f59e0b; flex-shrink: 0; animation: connPulse 1.2s ease-in-out infinite; }
+      @keyframes connPulse { 50% { opacity: .3; } }
+      .conn-banner button {
+          background: rgba(255,255,255,0.16);
+          color: #fff;
+          border: none;
+          border-radius: 999px;
+          padding: 6px 12px;
+          font-size: 12.5px;
+          cursor: pointer;
+          flex-shrink: 0;
+      }
+      .conn-banner button:hover { background: rgba(255,255,255,0.28); }
+      @media (prefers-reduced-motion: reduce) { .conn-dot { animation: none; } }
+
+      /* ---------- Access (permissions) picker ---------- */
+      .access-picker select { width: 100%; }
+      .ap-hint { font-size: 12.5px; opacity: .7; margin: 6px 0 0; line-height: 1.4; }
+      .ap-details { margin-top: 8px; }
+      .ap-details summary { cursor: pointer; font-size: 12.5px; opacity: .8; padding: 4px 0; user-select: none; }
+      .field .ap-check { display: flex; align-items: flex-start; gap: 10px; padding: 7px 2px; margin: 0; cursor: pointer; font-size: inherit; opacity: 1; }
+      .field .ap-check input { width: 20px; height: 20px; min-height: 0; padding: 0; margin: 0; flex-shrink: 0; accent-color: #1e3a8a; }
+      .ap-check b { display: block; font-size: 13.5px; font-weight: 600; }
+      .ap-check small { display: block; font-size: 12px; opacity: .65; margin-top: 1px; }
+
+      .people-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px; }
+      .person-row { padding: 10px 12px; border-radius: 10px; background: rgba(120,140,200,0.08); }
+      .person-head { display: flex; align-items: center; gap: 10px; }
+      .person-head .avatar { margin-left: 0; border: none; }
+      .person-name { flex: 1; min-width: 0; font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .person-tag { font-size: 11.5px; padding: 2px 8px; border-radius: 999px; background: rgba(120,140,200,0.2); white-space: nowrap; }
+      .person-access { font-size: 12.5px; opacity: .75; margin-top: 6px; line-height: 1.4; }
+      .person-row .access-picker { margin-top: 10px; }
+      .people-note { font-size: 13px; opacity: .75; margin: 0 0 12px; line-height: 1.45; }
+      .notif-access { font-size: 12px; opacity: .7; margin-top: 3px; }
+      #listMembers.clickable { cursor: pointer; }
 
       /* ---------- Toasts ---------- */
       #toastContainer {
@@ -860,7 +1033,7 @@
       /* ---------- Calendar view ---------- */
       .calendar-grid {
           display: grid;
-          grid-template-columns: repeat(7, 1fr);
+          grid-template-columns: repeat(7, minmax(0, 1fr));
           gap: 6px;
       }
       .calendar-weekday {
@@ -873,23 +1046,82 @@
       }
       .calendar-cell {
           min-height: 92px;
+          height: 116px;
+          max-height: 116px;
+          min-width: 0;
           background: rgba(120,140,200,0.07);
           border-radius: 8px;
           padding: 6px;
           display: flex;
           flex-direction: column;
           gap: 4px;
+          cursor: pointer;
+          overflow: hidden;
       }
-      .calendar-cell.empty { background: transparent; }
+      .calendar-cell:not(.empty):hover { background: rgba(120,140,200,0.14); }
+      .calendar-cell.past .calendar-daynum { opacity: .4; }
+      .calendar-cell.empty { background: transparent; cursor: default; }
+      .cal-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+      .cal-nav, .cal-tools { display: flex; gap: 8px; align-items: center; }
+      #calMonthLabel { font-weight: 600; min-width: 130px; text-align: center; }
+      .cal-short { display: none; }
+      .calendar-dots { display: none; }
+      .cal-legend { display: none; }
+      .cal-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+      .cal-dot.p-high { background: #ef4444; }
+      .cal-dot.p-normal { background: #3b82f6; }
+      .cal-dot.p-low { background: #22c55e; }
+
+      /* ---------- Day popup ---------- */
+      .day-nav { display: flex; align-items: center; gap: 10px; margin: -6px 0 14px; }
+      .day-nav .btn { width: 38px; height: 38px; padding: 0; font-size: 18px; line-height: 1; flex-shrink: 0; }
+      .day-sum { flex: 1; min-width: 0; text-align: center; font-size: 13px; opacity: .8; line-height: 1.35; }
+      .day-sum b { display: block; font-size: 14px; opacity: 1; }
+      .day-sum .day-rel { display: inline-block; font-size: 11.5px; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: rgba(120,140,200,0.2); margin-bottom: 3px; }
+      .day-sum .day-rel.is-today { background: #1e3a8a; color: #fff; }
+      .dark .day-sum .day-rel.is-today { background: #3b82f6; }
+      .day-list { display: flex; flex-direction: column; gap: 8px; min-height: 90px; }
+      .day-item {
+          display: flex; align-items: stretch; gap: 0; width: 100%;
+          background: rgba(120,140,200,0.09); border: none; border-radius: 12px;
+          color: inherit; font: inherit; text-align: left; cursor: pointer; padding: 0; overflow: hidden;
+          transition: background .15s, transform .1s;
+      }
+      .day-item:hover { background: rgba(120,140,200,0.17); }
+      .day-item:active { transform: scale(.985); }
+      .day-item:focus-visible { outline: 2px solid #3b82f6; outline-offset: 2px; }
+      .day-item-bar { width: 5px; flex-shrink: 0; }
+      .day-item.p-high .day-item-bar { background: #ef4444; }
+      .day-item.p-normal .day-item-bar { background: #3b82f6; }
+      .day-item.p-low .day-item-bar { background: #22c55e; }
+      .day-item-main { flex: 1; min-width: 0; padding: 11px 12px; display: flex; flex-direction: column; gap: 6px; }
+      .day-item-name { font-size: 14.5px; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
+      .day-item.done { opacity: .55; }
+      .day-item.done .day-item-name { text-decoration: line-through; }
+      .day-item-meta { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+      .day-pill { font-size: 11.5px; padding: 2px 8px; border-radius: 999px; background: rgba(120,140,200,0.18); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+      .day-pill.time { font-weight: 600; background: rgba(59,130,246,0.16); color: #1d4ed8; }
+      .dark .day-pill.time { color: #bfdbfe; }
+      .day-pill.overdue { background: #fee2e2; color: #b91c1c; font-weight: 600; }
+      .dark .day-pill.overdue { background: #7f1d1d; color: #fecaca; }
+      .day-pill.upcoming { background: #dbeafe; color: #1d4ed8; }
+      .dark .day-pill.upcoming { background: #1e3a8a; color: #dbeafe; }
+      .day-item-go { display: flex; align-items: center; padding: 0 12px 0 2px; font-size: 20px; opacity: .4; }
+      .day-empty { text-align: center; padding: 26px 10px 18px; opacity: .65; font-size: 14px; line-height: 1.5; }
+      .day-empty b { display: block; font-size: 15px; margin-bottom: 2px; }
+
       .calendar-cell.today { box-shadow: inset 0 0 0 2px #1e3a8a; }
       .dark .calendar-cell.today { box-shadow: inset 0 0 0 2px #93c5fd; }
       .calendar-daynum { font-size: 12px; font-weight: 600; opacity: .7; }
-      .calendar-tasks { display: flex; flex-direction: column; gap: 3px; overflow: hidden; }
+      .calendar-tasks { display: flex; flex-direction: column; gap: 3px; overflow: hidden; min-width: 0; width: 100%; flex: 1; min-height: 0; }
       .calendar-task-chip {
           font-size: 11px;
           color: #fff;
           padding: 3px 6px;
           border-radius: 5px;
+          min-width: 0;
+          max-width: 100%;
+          width: 100%;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -897,6 +1129,48 @@
           display: flex;
           align-items: center;
           gap: 4px;
+      }
+      .calendar-task-chip.compact {
+          justify-content: center;
+          padding: 2px 4px;
+          min-height: 10px;
+      }
+      .calendar-task-chip.compact .calendar-task-label { display: none; }
+      .calendar-task-chip.compact .calendar-task-dot {
+          width: 9px;
+          height: 9px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.9);
+          flex-shrink: 0;
+          display: inline-block;
+      }
+      .calendar-task-chip.compact .icon-svg { display: none; }
+      .calendar-detail-list {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          min-width: min(100%, 420px);
+      }
+      .calendar-detail-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          width: 100%;
+          background: rgba(120,140,200,0.08);
+          border: none;
+          border-radius: 10px;
+          color: inherit;
+          padding: 10px 12px;
+          text-align: left;
+          cursor: pointer;
+          font: inherit;
+      }
+      .calendar-detail-item:hover { background: rgba(120,140,200,0.14); }
+      .calendar-detail-item .calendar-task-chip {
+          width: auto;
+          flex: 1;
+          max-width: none;
+          min-width: 0;
       }
 
       .calendar-priority-low { background: #22c55e; }
@@ -914,72 +1188,197 @@
       .calendar-task-icon { font-size: 10px; flex-shrink: 0; }
       .calendar-more { font-size: 10.5px; opacity: .55; padding: 0 6px; }
 
+      /* ---------- Bottom bar (phones only) + account sheet ---------- */
+      .bottom-nav { display: none; }
+      .sheet-title { display: none; }
+
+      .acct-head { display: flex; align-items: center; gap: 12px; padding: 2px 0 14px; }
+      .acct-head .avatar { margin-left: 0; border: none; }
+      .acct-name { font-weight: 600; font-size: 16px; }
+      .acct-sub { font-size: 12.5px; opacity: .65; }
+      .acct-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          width: 100%;
+          padding: 13px 12px;
+          margin: 0 0 8px;
+          background: rgba(120,140,200,0.10);
+          color: inherit;
+          border: none;
+          border-radius: 10px;
+          font-size: 15px;
+          font-family: inherit;
+          cursor: pointer;
+          text-align: left;
+      }
+      .acct-row .icon-svg { width: 20px; height: 20px; flex-shrink: 0; }
+      .acct-row .grow { flex: 1; }
+      .acct-row.danger { color: #dc2626; }
+      .dark .acct-row.danger { color: #fca5a5; }
+
       /* ---------- Mobile layout ---------- */
       @media (max-width: 768px) {
           #app.visible { position: relative; }
 
-          .mobile-rail {
+.mobile-rail { display: none !important; }
+
+          .mobile-bell-btn { display: flex; }
+          .bottom-nav-btn[data-nav="alerts"] { display: none; }
+
+          /* The sidebar becomes the "Lists" sheet: it slides up from just above the bottom bar. */          .sidebar {
               position: fixed;
-              top: 0;
+              top: auto;
               left: 0;
-              width: 18px;
-              height: 100vh;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              background: var(--sidebar-bg);
-              border: none;
-              border-right: 1px solid rgba(255,255,255,0.08);
-              cursor: pointer;
-              z-index: 130;
-              padding: 0;
+              right: 0;
+              bottom: var(--nav-h);
+              width: 100%;
+              max-width: none;
+              height: auto;
+              max-height: calc(100vh - var(--nav-h) - 28px);
+              max-height: calc(100dvh - var(--nav-h) - 28px);
+              border-radius: 18px 18px 0 0;
+              padding: 10px 16px 16px;
+              z-index: 140;
+              transform: translateY(calc(100% + var(--nav-h)));
+              visibility: hidden;
+              transition: transform .25s ease, visibility 0s linear .25s;
+              box-shadow: 0 -8px 24px rgba(0,0,0,0.35);
           }
-          .mobile-rail span {
+          .sidebar.mobile-open { transform: translateY(0); visibility: visible; transition: transform .25s ease, visibility 0s; max-height: 75vh; max-height: 75dvh; }
+          .sidebar.mobile-open ~ .sidebar-overlay { display: block; }
+          /* Everything that lives in the bottom bar (or the Account sheet) is hidden from the Lists sheet. */
+          .sidebar .logo-row,
+          .sidebar .profile-row,
+          .sidebar .logout-link,
+          .sidebar nav .my-tasks-link,
+          .sidebar nav .calendar-link,
+          .sidebar nav .settings-link { display: none; }
+          .sidebar nav { flex: 0 1 auto; }
+          .sidebar .sheet-title {
+              display: block;
+              position: relative;
+              text-align: center;
+              font-weight: 600;
+              font-size: 15px;
               color: #fff;
-              font-size: 18px;
-              line-height: 1;
-              transform: translateX(-1px);
+              padding: 14px 0 12px;
+              flex-shrink: 0;
           }
 
-          .sidebar {
-              position: fixed;
-              top: 0;
-              left: 0;
-              height: 100vh;
-              height: 100dvh;
-              width: 100%;
-              max-width: 320px;
-              z-index: 140;
-              transform: translateX(-100%);
-              transition: transform .25s ease;
-              box-shadow: 4px 0 18px rgba(0,0,0,0.3);
-          }
-          .sidebar.mobile-open { transform: translateX(0); }
-          .sidebar.mobile-open ~ .sidebar-overlay { display: block; }
+          .sidebar .top-actions { margin-bottom: 14px; }
+          .sidebar .top-actions button { padding: 11px 6px; font-size: 14px; }
+          .sidebar .nav-section-label:first-child { margin-top: 4px; }
 
           .content {
-              padding: 18px 14px 80px 26px;
+              padding: 18px 14px 16px;
               width: 100%;
-              height: 100vh;
-              height: 100dvh;
-              max-height: 100vh;
-              max-height: 100dvh;
+              height: calc(100vh - var(--nav-h));
+              height: calc(100dvh - var(--nav-h));
+              max-height: calc(100vh - var(--nav-h));
+              max-height: calc(100dvh - var(--nav-h));
               box-sizing: border-box;
           }
 
-          .content-header { flex-direction: column; align-items: stretch; }
+          /* ---------- Bottom bar ---------- */
+          .bottom-nav {
+              position: fixed;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              height: var(--nav-h);
+              padding-bottom: env(safe-area-inset-bottom, 0px);
+              display: flex;
+              background: var(--sidebar-bg);
+              border-top: 1px solid rgba(255,255,255,0.10);
+              box-shadow: 0 -4px 16px rgba(0,0,0,0.18);
+              z-index: 150;
+          }
+          .bottom-nav-btn {
+              flex: 1;
+              min-width: 0;
+              position: relative;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              gap: 3px;
+              padding: 6px 2px;
+              background: none;
+              border: none;
+              color: #a8b8ec;
+              font-family: inherit;
+              font-size: 10.5px;
+              cursor: pointer;
+              -webkit-tap-highlight-color: transparent;
+          }
+          .bottom-nav-btn:active { background: rgba(255,255,255,0.08); }
+          .bottom-nav-btn.active { color: #fff; }
+          .bottom-nav-btn.active::before {
+              content: "";
+              position: absolute;
+              top: 0;
+              left: 28%;
+              right: 28%;
+              height: 3px;
+              border-radius: 0 0 3px 3px;
+              background: #60a5fa;
+          }
+          .bottom-nav-btn:focus-visible { outline: 2px solid #93c5fd; outline-offset: -3px; }
+          .bottom-nav .nav-ico { position: relative; display: flex; }
+          .bottom-nav .icon-svg { width: 22px; height: 22px; }
+          .bottom-nav .bell-badge { top: -6px; right: -10px; pointer-events: none; }
+
+                    .content-header { flex-direction: column; align-items: stretch; }
           .header-actions { flex-wrap: wrap; }
 
-          .add-task-bar { flex-direction: column; align-items: stretch; }
-          .add-task-bar input, .add-task-bar select { width: 100%; }
+          /* Add-task bar: one row (name, options, Add); the rest folds away until asked for. */
+          .add-task-bar { display: block; padding: 8px; margin-bottom: 12px; }
+          .add-main { display: flex; align-items: center; gap: 6px; }
+          .add-main input[type="text"] { flex: 1; min-width: 0; }
+          .add-task-bar #addTaskBtn { order: 0; flex-shrink: 0; height: 42px; }
+          .add-opts-toggle { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; padding: 0; flex-shrink: 0; font-size: 20px; line-height: 1; }
+          .add-opts-toggle[aria-expanded="true"] { background: #1e3a8a; color: #fff; }
+          .add-opts { display: none; margin-top: 8px; grid-template-columns: 1fr 1fr; gap: 8px; }
+          .add-task-bar.show-opts .add-opts { display: grid; }
+          .add-opts #newTaskRepeat { grid-column: 1 / -1; min-width: 0; }
+          .add-task-bar input, .add-task-bar select { width: 100%; min-width: 0; height: 42px; font-size: 16px; }
           .add-task-bar input[type="time"] { width: 100%; }
 
-          .task-item { flex-wrap: wrap; }
-          .task-name { flex: 1 1 100%; order: 1; }
-          .task-checkbox { order: 0; }
-          .priority-dot { order: 0; }
-          .deadline-badge, .assignee-chip { order: 2; }
-          .task-actions { order: 3; margin-left: auto; }
+          /* Tasks: one compact line (check, name, delete) with a small badge line only when there is something to show. */
+          .task-list { gap: 4px; }
+          .task-item {
+              display: grid;
+              grid-template-columns: auto minmax(0, 1fr) auto;
+              grid-template-areas: "check name actions" ". meta .";
+              column-gap: 10px;
+              row-gap: 3px;
+              align-items: center;
+              padding: 7px 6px 7px 12px;
+          }
+          .task-checkbox { grid-area: check; }
+          .priority-dot { display: none; }
+          .task-item.prio-high { box-shadow: inset 3px 0 0 #ef4444; }
+          .task-item.prio-low { box-shadow: inset 3px 0 0 #22c55e; }
+          .task-name {
+              grid-area: name;
+              font-size: 14px;
+              line-height: 1.3;
+              display: -webkit-box;
+              -webkit-line-clamp: 2;
+              -webkit-box-orient: vertical;
+              overflow: hidden;
+              overflow-wrap: anywhere;
+          }
+          .task-meta { grid-area: meta; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+          .task-actions { grid-area: actions; }
+          .task-actions .icon-btn { min-width: 32px; min-height: 32px; padding: 6px; font-size: 16px; }
+          .task-meta .deadline-badge, .task-meta .repeat-badge { font-size: 11px; padding: 1px 6px; }
+          .task-meta .assignee-chip { font-size: 11px; padding: 1px 7px 1px 2px; }
+
+          .mytask-row { flex-wrap: wrap; gap: 3px 8px; padding: 8px 10px; }
+          .mytask-name { flex: 1 1 calc(100% - 24px); min-width: 0; overflow-wrap: anywhere; }
+          .mytask-row .deadline-badge, .mytask-row .repeat-badge { font-size: 11px; padding: 1px 6px; }
           .proj-header { gap: 6px; padding: 6px 6px 6px 2px; }
           .proj-header .proj-name { font-size: 15px; min-width: 0; }
           .proj-header .member-count {
@@ -1018,31 +1417,111 @@
               height: 1.2em;
           }
 
-          .modal-box { width: 88vw; max-width: 360px; }
+          /* Dialogs become bottom sheets on phones: easy to reach, big tap targets */
+          .modal-overlay { align-items: flex-end; }
+          .modal-box, .modal-box.wide {
+              width: 100%;
+              max-width: none;
+              max-height: 75vh;
+              max-height: 75dvh;
+              border-radius: 18px 18px 0 0;
+              padding: 20px 18px 20px;
+              padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+              box-sizing: border-box;
+              animation: sheetUp .22s ease;
+          }
+          .modal-actions { gap: 10px; }
+          .modal-box .modal-actions { bottom: -20px; }
+          .modal-actions .btn { flex: 1; min-height: 46px; font-size: 15px; }
+          .field input, .field select { font-size: 16px; min-height: 44px; }
+          .field .ap-check { padding: 9px 2px; }
+          .dlg-overlay { align-items: flex-end; padding: 0; }
+          .dlg {
+              max-width: none;
+              border-radius: 18px 18px 0 0;
+              padding: 20px 18px 18px;
+              padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+              animation: sheetUp .22s ease;
+          }
+          .dlg-actions { flex-direction: column-reverse; }
+          .dlg-actions .btn { width: 100%; min-height: 48px; font-size: 15px; }
+          .conn-banner { font-size: 12.5px; }
+          .proj-header .member-count { min-height: 32px; display: inline-flex; align-items: center; }
           .field-row { flex-direction: column; }
           .settings-row:not(.row-toggle) { flex-direction: column; align-items: stretch; gap: 8px; }
           .settings-control { flex-shrink: 1; flex-wrap: wrap; }
           .settings-control select, .settings-control input { width: 100%; }
 
-          #toastContainer { left: 8px; right: 8px; bottom: 8px; }
+          #toastContainer { left: 8px; right: 8px; bottom: calc(var(--nav-h) + 8px); }
           .toast { max-width: none; }
 
-          .notif-panel {
-              position: fixed;
+.notif-panel {
               left: 10px;
               right: 10px;
               width: auto;
               max-width: none;
               min-width: 0;
-              top: 10px;
-              bottom: auto;
-              max-height: calc(100vh - 20px);
+              top: auto;
+              bottom: calc(var(--nav-h) + 10px);
+              max-height: min(420px, calc(100vh - var(--nav-h) - 30px));
+              max-height: min(420px, calc(100dvh - var(--nav-h) - 30px));
           }
 
-          .sort-menu { left: 0; min-width: 170px; }
+                    .sort-menu { left: 0; min-width: 170px; }
 
-          .calendar-cell { min-height: 64px; }
-          .calendar-weekday { font-size: 10px; padding: 2px 0 4px; }
+          /* Calendar: compact month grid with priority dots; tap a day to open its details sheet. */
+          #calendarView .content-header { margin-bottom: 12px; gap: 8px; }
+          #calendarView .content-header h1 { font-size: 1.35rem; margin: 0; }
+          .cal-actions { flex-direction: column; align-items: stretch; gap: 8px; }
+          .cal-nav { justify-content: space-between; }
+          #calMonthLabel { flex: 1; min-width: 0; font-size: 18px; }
+          .cal-nav .btn { width: 46px; height: 42px; font-size: 22px; line-height: 1; padding: 0; }
+          .cal-tools .btn { flex: 1; height: 40px; font-size: 13.5px; }
+          .cal-tools #calLinkBtn { flex: 2; }
+          .cal-long { display: none; }
+          .cal-short { display: inline; }
+          .calendar-grid { gap: 4px; touch-action: pan-y; }
+          .calendar-weekday { font-size: 10.5px; padding: 2px 0 4px; letter-spacing: 0; }
+          .calendar-cell {
+              min-height: 56px;
+              height: auto;
+              max-height: none;
+              aspect-ratio: 1 / 1.08;
+              padding: 4px 2px 5px;
+              align-items: center;
+              gap: 3px;
+              border-radius: 10px;
+              -webkit-tap-highlight-color: transparent;
+          }
+          .calendar-cell.has-tasks { background: rgba(120,140,200,0.16); }
+          .calendar-cell:not(.empty):active { background: rgba(120,140,200,0.3); }
+          .calendar-cell.today { box-shadow: none; }
+          .calendar-daynum {
+              font-size: 14px;
+              opacity: .9;
+              width: 26px;
+              height: 26px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              border-radius: 50%;
+          }
+          .calendar-cell.today .calendar-daynum { background: #1e3a8a; color: #fff; opacity: 1; }
+          .dark .calendar-cell.today .calendar-daynum { background: #3b82f6; }
+          .calendar-dots { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 3px; min-height: 8px; max-width: 100%; }
+          .calendar-dots .cal-dot { width: 7px; height: 7px; }
+          .calendar-dots .cal-dot.done { opacity: .35; }
+          .calendar-dots .cal-dot.future { opacity: .6; }
+          .calendar-dots .cal-count { font-size: 9.5px; font-weight: 700; line-height: 1; opacity: .7; }
+          .cal-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; justify-content: center; align-items: center; font-size: 11.5px; opacity: .7; margin-top: 12px; }
+          .cal-legend span { display: inline-flex; align-items: center; gap: 5px; }
+          .cal-legend .cal-legend-tip { flex-basis: 100%; justify-content: center; opacity: .8; }
+
+          /* Day popup on phones */
+          .day-nav .btn { width: 44px; height: 44px; }
+          .day-item-main { padding: 12px 12px; }
+          .day-item-name { font-size: 15px; }
+          .day-pill { font-size: 12px; }
       }
   </style>
 </head>
@@ -1069,6 +1548,7 @@
 
 <div id="app">
   <aside class="sidebar" id="sidebar">
+    <div class="sheet-title">Projects &amp; Lists</div>
     <div class="logo-row">
       <div class="logo">Orderly</div>
       <div class="bell-wrap">
@@ -1105,6 +1585,19 @@
 
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
+  <nav class="bottom-nav" id="bottomNav" aria-label="Main navigation">
+    <button type="button" class="bottom-nav-btn" data-nav="lists" aria-label="Projects and lists"><span class="nav-ico" data-icon="list"></span><span>Lists</span></button>
+    <button type="button" class="bottom-nav-btn" data-nav="myTasks" aria-label="My tasks"><span class="nav-ico" data-icon="checkCircle"></span><span>My Tasks</span></button>
+    <button type="button" class="bottom-nav-btn" data-nav="calendar" aria-label="Calendar"><span class="nav-ico" data-icon="calendar"></span><span>Calendar</span></button>
+    <button type="button" class="bottom-nav-btn" data-nav="alerts" aria-label="Notifications"><span class="nav-ico" data-icon="bell"><span class="bell-badge" id="navBellBadge" style="display:none;">0</span></span><span>Alerts</span></button>
+    <button type="button" class="bottom-nav-btn" data-nav="account" aria-label="Account and settings"><span class="nav-ico" data-icon="user"></span><span>Account</span></button>
+  </nav>
+
+  <button class="mobile-bell-btn" id="mobileBellBtn" type="button" title="Notifications" aria-label="Notifications">
+    <svg class="bell-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+    <span class="bell-badge" id="mobileBellBadge" style="display:none;">0</span>
+  </button>
+
   <main class="content">
     <button class="mobile-rail" id="mobileMenuBtn" type="button" aria-label="Open menu">
       <span>›</span>
@@ -1136,15 +1629,25 @@
         <div>
           <h1>Calendar</h1>
         </div>
-        <div class="header-actions">
-          <button class="btn btn-secondary btn-small" id="calPrevBtn">‹</button>
-          <span id="calMonthLabel" style="align-self:center;font-weight:600;min-width:130px;text-align:center;"></span>
-          <button class="btn btn-secondary btn-small" id="calNextBtn">›</button>
-          <button class="btn btn-secondary btn-small" id="calTodayBtn">Today</button>
-          <button class="btn btn-secondary btn-small" id="calLinkBtn" title="Add your tasks to Google Calendar or Outlook">Link to Google / Outlook</button>
+        <div class="header-actions cal-actions">
+          <div class="cal-nav">
+            <button class="btn btn-secondary btn-small" id="calPrevBtn" aria-label="Previous month">‹</button>
+            <span id="calMonthLabel" aria-live="polite"></span>
+            <button class="btn btn-secondary btn-small" id="calNextBtn" aria-label="Next month">›</button>
+          </div>
+          <div class="cal-tools">
+            <button class="btn btn-secondary btn-small" id="calTodayBtn">Today</button>
+            <button class="btn btn-secondary btn-small" id="calLinkBtn" title="Add your tasks to Google Calendar or Outlook"><span class="cal-long">Link to Google / Outlook</span><span class="cal-short">Sync to Google / Outlook</span></button>
+          </div>
         </div>
       </div>
       <div class="calendar-grid" id="calendarGrid"></div>
+      <div class="cal-legend" aria-hidden="true">
+        <span><i class="cal-dot p-high"></i>High</span>
+        <span><i class="cal-dot p-normal"></i>Normal</span>
+        <span><i class="cal-dot p-low"></i>Low</span>
+        <span class="cal-legend-tip">Tap a day for details</span>
+      </div>
     </div>
 
     <div id="settingsView" class="view">
@@ -1168,20 +1671,26 @@
         <div class="header-actions" id="listHeaderActions"></div>
       </div>
 
-      <div class="add-task-bar">
-        <input type="text" id="newTaskName" placeholder="Add a task...">
-        <input type="date" id="newTaskDeadline">
-        <input type="time" id="newTaskDeadlineTime">
-        <select id="newTaskPriority">
-          <option value="low">Low</option>
-          <option value="normal" selected>Normal</option>
-          <option value="high">High</option>
-        </select>
-        <input type="text" id="newTaskRepeat" placeholder="Repeat, e.g. every mon, fri" autocomplete="off"
-               title='Type how often it repeats, e.g. "every day", "every weekday", "every 2 weeks", "every 3rd friday", "every last day", "every mon, fri at 8pm", "every day ending dec 31", or "every! 3 days" to count from the day you complete it.'>
-        <select id="newTaskAssignee"><option value="">Unassigned</option></select>
-        <button class="btn btn-primary" id="addTaskBtn">Add Task</button>
+      <div class="add-task-bar" id="addTaskBar">
+        <div class="add-main">
+          <input type="text" id="newTaskName" placeholder="Add a task..." enterkeyhint="done">
+          <button type="button" class="btn btn-secondary add-opts-toggle" id="addOptsToggle" aria-expanded="false" aria-controls="addOpts" aria-label="More options (date, priority, repeat, assignee)" title="More options">⋯</button>
+          <button class="btn btn-primary" id="addTaskBtn">Add Task</button>
+        </div>
+        <div class="add-opts" id="addOpts">
+          <input type="date" id="newTaskDeadline" aria-label="Deadline date">
+          <input type="time" id="newTaskDeadlineTime" aria-label="Deadline time">
+          <select id="newTaskPriority" aria-label="Priority">
+            <option value="low">Low</option>
+            <option value="normal" selected>Normal</option>
+            <option value="high">High</option>
+          </select>
+          <input type="text" id="newTaskRepeat" placeholder="Repeat, e.g. every mon, fri" autocomplete="off"
+                 title='Type how often it repeats, e.g. "every day", "every weekday", "every 2 weeks", "every 3rd friday", "every last day", "every mon, fri at 8pm", "every day ending dec 31", or "every! 3 days" to count from the day you complete it.'>
+          <select id="newTaskAssignee" aria-label="Assign to"><option value="">Unassigned</option></select>
+        </div>
       </div>
+      <div class="access-note" id="accessNote" style="display:none;"></div>
 
       <ul class="task-list" id="taskList"></ul>
     </div>
@@ -1190,7 +1699,17 @@
 </div>
 
 <div class="modal-overlay" id="modalOverlay">
-  <div class="modal-box" id="modalBox"></div>
+  <div class="modal-box" id="modalBox" role="dialog" aria-modal="true" aria-labelledby="modalTitle"></div>
+</div>
+
+<div class="dlg-overlay" id="dlgOverlay">
+  <div class="dlg" id="dlgBox" role="alertdialog" aria-modal="true" aria-labelledby="dlgTitle" aria-describedby="dlgMsg"></div>
+</div>
+
+<div class="conn-banner" id="connBanner" role="status" aria-live="polite">
+  <span class="conn-dot"></span>
+  <span id="connBannerText">Connection lost. Reconnecting…</span>
+  <button type="button" id="connRetryBtn">Retry now</button>
 </div>
 
 <div id="toastContainer"></div>
@@ -1402,10 +1921,12 @@
     function openSidebar() {
         sidebarEl.classList.add("mobile-open");
         sidebarOverlay.style.display = "block";
+        updateBottomNav();
     }
     function closeSidebar() {
         sidebarEl.classList.remove("mobile-open");
         sidebarOverlay.style.display = "none";
+        updateBottomNav();
     }
     function toggleSidebar() {
         if (sidebarEl.classList.contains("mobile-open")) closeSidebar();
@@ -1507,18 +2028,195 @@
             : "";
     }
 
+    // ============================================================
+    // Live connection, with automatic reconnect
+    //
+    // If the connection drops (server restart, flaky mobile signal, phone asleep, laptop lid closed) the page
+    // keeps trying again in the background, backing off from 1s up to ~15s. A small banner shows while
+    // it's down. When it comes back, everything is reloaded so nothing missed in the meantime is lost.
+    // ============================================================
+    const REQUEST_TIMEOUT_MS = 20000;
+    let socketReady = false;      // the server accepted our token on the current socket
+    let synced = false;           // the dashboard etc. have been (re)loaded on the current socket
+    let sessionActive = false;    // set once we've entered the app
+    let loggingOut = false;
+    let reconnectTimer = null;
+    let reconnectAttempt = 0;
+    let reconnecting = false;
+    let heartbeatTimer = null;
+    let bannerTimer = null;
+    let offlineShown = false;
+
+    const connBanner = document.getElementById("connBanner");
+    const connBannerText = document.getElementById("connBannerText");
+
+    function updateBannerText() {
+        connBannerText.textContent = navigator.onLine === false
+            ? "You're offline. We'll reconnect when you're back."
+            : "Connection lost. Reconnecting…";
+    }
+    function setOffline(isOffline) {
+        if (isOffline) {
+            if (offlineShown || bannerTimer) return;
+            // A very short blip (like a phone waking up) shouldn't flash a banner.
+            bannerTimer = setTimeout(() => {
+                bannerTimer = null;
+                offlineShown = true;
+                updateBannerText();
+                connBanner.classList.add("visible");
+            }, 900);
+        } else {
+            clearTimeout(bannerTimer);
+            bannerTimer = null;
+            if (offlineShown) {
+                offlineShown = false;
+                connBanner.classList.remove("visible");
+                showToast("Back online");
+            }
+        }
+    }
+
+    function makeOfflineError(message) {
+        const e = new Error(message);
+        e.offline = true;
+        return e;
+    }
+    function rejectPending(err) {
+        pending.forEach((p) => p.reject(err));
+        pending.clear();
+    }
+
+    function handleAuthFailure(err) {
+        // Stale session (e.g. password was reset elsewhere): back to the sign-in card.
+        loggingOut = true;
+        clearCookie("authToken");
+        try { sessionStorage.setItem("authNotice", /password was changed/.test(err.message) ? err.message : "Please sign in again."); } catch (e) {}
+        location.reload();
+    }
+
+    function onSocketClosed(ev, sock) {
+        socketReady = false;
+        synced = false;
+        stopHeartbeat();
+        rejectPending(makeOfflineError("The connection dropped. Please try again."));
+        if (loggingOut || !sessionActive || sock.authFailed) return;
+        if (ev && ev.code === 4001 && currentUser) {
+            handleAuthFailure(new Error("Your password was changed. Please sign in again."));
+            return;
+        }
+        setOffline(true);
+        scheduleReconnect();
+    }
+
+    function scheduleReconnect(immediate) {
+        if (loggingOut) return;
+        if (reconnectTimer && !immediate) return;
+        clearTimeout(reconnectTimer);
+        const base = Math.min(15000, 1000 * 2 ** Math.min(reconnectAttempt, 4));
+        const delay = immediate ? 0 : base * (0.75 + Math.random() * 0.5);
+        reconnectTimer = setTimeout(attemptReconnect, delay);
+    }
+
+    async function attemptReconnect() {
+        reconnectTimer = null;
+        if (reconnecting || loggingOut) return;
+        if (socketReady && synced) return;
+        reconnecting = true;
+        try {
+            if (!(socketReady && ws && ws.readyState === WebSocket.OPEN)) await connectAppSocket();
+            await loadEverything();
+            synced = true;
+            reconnectAttempt = 0;
+            startHeartbeat();
+            setOffline(false);
+        } catch (err) {
+            if (err && err.authFailed) { handleAuthFailure(err); return; }
+            // A connection that opens but never answers is as good as dead: throw it away and start fresh next time.
+            if (err && err.offline && socketReady && ws) dropSocket(ws);
+            reconnectAttempt++;
+            scheduleReconnect();
+        } finally {
+            reconnecting = false;
+        }
+    }
+
+    function reconnectNow() {
+        reconnectAttempt = 0;
+        if (reconnecting && ws && ws.readyState === WebSocket.CONNECTING) { try { ws.close(); } catch (e) {} return; }
+        scheduleReconnect(true);
+    }
+
+    // Phones often leave a socket "open" that is really dead. A small ping every so often finds out.
+    function startHeartbeat() {
+        stopHeartbeat();
+        heartbeatTimer = setInterval(pingServer, 25000);
+    }
+    function stopHeartbeat() {
+        clearInterval(heartbeatTimer);
+        heartbeatTimer = null;
+    }
+    function dropSocket(sock) {
+        sock.onopen = sock.onmessage = sock.onerror = sock.onclose = null;
+        try { sock.close(); } catch (e) {}
+        onSocketClosed({ code: 4000 }, sock);
+    }
+    async function pingServer() {
+        if (!socketReady) return;
+        const sock = ws;
+        try {
+            await Promise.race([
+                call("ping"),
+                new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 8000)),
+            ]);
+        } catch (e) {
+            if (sock === ws && socketReady) dropSocket(sock);
+        }
+    }
+    function checkConnectionSoon() {
+        if (!sessionActive || loggingOut) return;
+        if (socketReady) pingServer();
+        else { reconnectAttempt = 0; scheduleReconnect(true); }
+    }
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkConnectionSoon(); });
+    window.addEventListener("online", checkConnectionSoon);
+    window.addEventListener("offline", () => { if (offlineShown) updateBannerText(); });
+    document.getElementById("connRetryBtn").addEventListener("click", reconnectNow);
+
+    // Everything the page shows that comes from the server. Also used to catch up after a reconnect.
+    async function loadEverything() {
+        renderProfile();
+        await Promise.all([loadDashboard(), refreshNotifications(), loadSettings()]);
+        await refreshCurrentView();
+    }
+
+    async function refreshCurrentView() {
+        try {
+            if (currentView === "list" && currentList) await openList(currentList.id);
+            else if (currentView === "myTasks") await openMyTasks();
+            else if (currentView === "calendar") await loadCalendar();
+        } catch (err) {
+            if (err && err.offline) throw err;
+            if (currentView === "list") {
+                currentList = null;
+                switchView("welcome");
+                renderSidebar();
+                showToast("That list isn't available any more.");
+            }
+        }
+    }
+
     function enterApp() {
+        sessionActive = true;
         authCard.style.display = "none";
         appEl.classList.add("visible");
         document.body.style.background = "#f8f9fb";
         document.body.style.alignItems = "stretch";
         document.body.style.justifyContent = "stretch";
         connectAppSocket()
+            .then(() => loadEverything())
             .then(() => {
-                renderProfile();
-                return Promise.all([loadDashboard(), refreshNotifications(), loadSettings()]);
-            })
-            .then(() => {
+                synced = true;
+                startHeartbeat();
                 const e = settingsData && settingsData.email;
                 if (!e || !e.address || e.verified) { pendingEmailNotice = false; return; }
                 if (pendingEmailNotice && settingsData.email_service) {
@@ -1530,26 +2228,40 @@
                 pendingEmailNotice = false;
             })
             .catch((err) => {
-                if (err && err.authFailed) {
-                    // Stale session (e.g. password was reset elsewhere): back to the sign-in card.
-                    clearCookie("authToken");
-                    try { sessionStorage.setItem("authNotice", /password was changed/.test(err.message) ? err.message : "Please sign in again."); } catch (e) {}
-                    location.reload();
-                    return;
-                }
-                showToast("Connection failed: " + err.message);
+                if (err && err.authFailed) { handleAuthFailure(err); return; }
+                // Server unreachable (or it dropped while loading): keep trying quietly in the background.
+                setOffline(true);
+                scheduleReconnect();
             });
     }
 
     function connectAppSocket() {
         return new Promise((resolve, reject) => {
-            ws = new WebSocket(WS_BASE + "/ws/app");
-            ws.onopen = () => ws.send(JSON.stringify({ token: authToken }));
-            ws.onmessage = (evt) => {
-                const msg = JSON.parse(evt.data);
+            const sock = new WebSocket(WS_BASE + "/ws/app");
+            ws = sock;
+            socketReady = false;
+            let settled = false;
+            const fail = (e) => { if (!settled) { settled = true; clearTimeout(timer); reject(e); } };
+            const timer = setTimeout(() => {
+                fail(makeOfflineError("Connection timed out"));
+                try { sock.close(); } catch (e) {}
+            }, 10000);
+            sock.onopen = () => sock.send(JSON.stringify({ token: authToken }));
+            sock.onmessage = (evt) => {
+                if (sock !== ws) return;
+                let msg;
+                try { msg = JSON.parse(evt.data); } catch (e) { return; }
                 if (msg.type === "auth") {
-                    if (msg.ok) { currentUser = msg.user; resolve(); }
-                    else { const e = new Error(msg.error || "auth failed"); e.authFailed = true; reject(e); }
+                    if (msg.ok) {
+                        currentUser = msg.user;
+                        socketReady = true;
+                        if (!settled) { settled = true; clearTimeout(timer); resolve(); }
+                    } else {
+                        sock.authFailed = true;
+                        const e = new Error(msg.error || "auth failed");
+                        e.authFailed = true;
+                        fail(e);
+                    }
                     return;
                 }
                 if (msg.type === "response") {
@@ -1562,29 +2274,46 @@
                 }
                 if (msg.type === "event") handleLiveEvent(msg);
             };
-            ws.onerror = () => reject(new Error("could not connect"));
-            ws.onclose = (ev) => {
-                if (ev && ev.code === 4001 && currentUser) {
-                    clearCookie("authToken");
-                    try { sessionStorage.setItem("authNotice", "Your password was changed. Please sign in again."); } catch (e) {}
-                    location.reload();
-                    return;
-                }
-                if (currentUser) showToast("Disconnected from live updates.");
+            sock.onerror = () => fail(makeOfflineError("could not connect"));
+            sock.onclose = (ev) => {
+                clearTimeout(timer);
+                fail(makeOfflineError("could not connect"));
+                if (sock === ws) onSocketClosed(ev, sock);
             };
         });
     }
 
     function call(action, payload = {}) {
         return new Promise((resolve, reject) => {
+            if (!ws || ws.readyState !== WebSocket.OPEN || !socketReady) {
+                reject(makeOfflineError("You're offline right now. Reconnecting…"));
+                return;
+            }
             const id = "r" + (++reqCounter);
-            pending.set(id, { resolve, reject });
-            ws.send(JSON.stringify({ id, action, payload }));
+            // If the server never answers, give up on this request and check whether the connection is still alive.
+            const timer = setTimeout(() => {
+                if (!pending.delete(id)) return;
+                reject(makeOfflineError("The server isn't responding. Please try again."));
+                checkConnectionSoon();
+            }, REQUEST_TIMEOUT_MS);
+            pending.set(id, {
+                resolve: (v) => { clearTimeout(timer); resolve(v); },
+                reject: (e) => { clearTimeout(timer); reject(e); },
+            });
+            try {
+                ws.send(JSON.stringify({ id, action, payload }));
+            } catch (e) {
+                clearTimeout(timer);
+                pending.delete(id);
+                reject(makeOfflineError("Couldn't send that. Please try again."));
+            }
         });
     }
 
     document.getElementById("logoutLink").addEventListener("click", (e) => {
         e.preventDefault();
+        loggingOut = true;
+        try { if (ws) ws.close(); } catch (err) {}
         clearCookie("authToken");
         location.reload();
     });
@@ -1603,8 +2332,19 @@
         const icons = {
             userPlus: '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 19v-1a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v1"/><circle cx="10" cy="7" r="3.5"/><path d="M18 8v6"/><path d="M15 11h6"/></svg>',
             trash: '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/></svg>',
+            list: '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>',
+            checkCircle: '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M8 12.5l2.8 2.8 5.7-5.8"/></svg>',
+            calendar: '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17"/><path d="M8 3v4"/><path d="M16 3v4"/></svg>',
+            bell: '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>',
+            user: '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg>',
+            settings: '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h9"/><path d="M17 6h3"/><circle cx="15" cy="6" r="2"/><path d="M4 12h3"/><path d="M11 12h9"/><circle cx="9" cy="12" r="2"/><path d="M4 18h11"/><path d="M19 18h1"/><circle cx="17" cy="18" r="2"/></svg>',
+            moon: '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>',
+            logout: '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>',
             sparkles: '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 1.4 4.6L18 8l-4.6 1.4L12 14l-1.4-4.6L6 8l4.6-1.4L12 2Z"/><path d="m18.5 14 0.8 2.7L22 17.5l-2.7.8L18.5 21l-.8-2.7L15 17.5l2.7-.8L18.5 14Z"/><path d="m5.5 14 0.8 2.7L9 17.5l-2.7.8L5.5 21l-.8-2.7L2 17.5l2.7-.8L5.5 14Z"/></svg>',
             check: '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7.5"/></svg>',
+            warn: '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9.5v4.5"/><path d="M12 17.5h.01"/></svg>',
+            question: '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M9.2 9.3a2.9 2.9 0 0 1 5.6 1c0 1.9-2.8 2.4-2.8 4.2"/><path d="M12 17.8h.01"/></svg>',
+            users: '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 20v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1"/><circle cx="9.5" cy="8" r="3.5"/><path d="M21 20v-1a4 4 0 0 0-3-3.9"/><path d="M15.5 4.3a3.5 3.5 0 0 1 0 7.4"/></svg>',
             repeat: '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 13.1-6.1"/><path d="M18 4h2v4"/><path d="M20 12a8 8 0 0 1-13.1 6.1"/><path d="M6 20H4v-4"/></svg>'
         };
         return icons[name] || "";
@@ -1648,6 +2388,7 @@
 
     function switchView(view) {
         currentView = view;
+        updateBottomNav();
         document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
         document.getElementById(view + "View").classList.add("active");
         document.querySelectorAll(".list-link, .my-tasks-link, .calendar-link, .settings-link").forEach((a) => a.classList.remove("active"));
@@ -1717,23 +2458,43 @@
     const modalOverlay = document.getElementById("modalOverlay");
     const modalBox = document.getElementById("modalBox");
 
-    function openModal({ title, fields, submitLabel, onSubmit }) {
+    let modalReturnFocus = null;
+    function openModal({ title, fields, submitLabel, cancelLabel, hideSubmit, wide, intro, onSubmit }) {
+        modalReturnFocus = document.activeElement;
+        modalBox.classList.toggle("wide", !!wide);
+        const mobileSheet = isMobile();
+        const showCancel = !mobileSheet && (cancelLabel !== undefined && cancelLabel !== null && cancelLabel !== false);
+        const showSubmit = !hideSubmit;
+        const actions = [];
+        if (showCancel) actions.push(`<button class="btn btn-secondary" id="modalCancel">${escapeHtml(cancelLabel || "Cancel")}</button>`);
+        if (showSubmit) actions.push(`<button class="btn btn-primary" id="modalSubmit">${escapeHtml(submitLabel || "Save")}</button>`);
         modalBox.innerHTML = `
-            <h3>${escapeHtml(title)}</h3>
-            <div id="modalFields"></div>
-            <div class="modal-error" id="modalError"></div>
-            <div class="modal-actions">
-                <button class="btn btn-secondary" id="modalCancel">Cancel</button>
-                <button class="btn btn-primary" id="modalSubmit">${escapeHtml(submitLabel || "Save")}</button>
+            <h3 id="modalTitle">${escapeHtml(title)}</h3>
+            ${intro ? `<p class="people-note">${escapeHtml(intro)}</p>` : ""}
+            <div class="modal-scroll">
+                <div id="modalFields"></div>
+                <div class="modal-error" id="modalError" role="alert"></div>
+            </div>
+            <div class="modal-actions" ${actions.length ? "" : "hidden"}>
+                ${actions.join("")}
             </div>
         `;
         const fieldsEl = modalBox.querySelector("#modalFields");
+        const getters = {};
         fields.forEach((f) => {
             const wrap = document.createElement("div");
             wrap.className = "field";
             const label = document.createElement("label");
             label.textContent = f.label;
-            wrap.appendChild(label);
+            if (f.label) wrap.appendChild(label);
+
+            if (f.type === "custom") {
+                const built = f.build();
+                wrap.appendChild(built.el);
+                getters[f.id] = built.getValue;
+                fieldsEl.appendChild(wrap);
+                return;
+            }
 
             let input;
             if (f.type === "select") {
@@ -1757,31 +2518,120 @@
         });
 
         modalOverlay.classList.add("visible");
-        modalBox.querySelector("#modalCancel").onclick = closeModal;
-        modalBox.querySelector("#modalSubmit").onclick = async () => {
+        const cancelBtn = modalBox.querySelector("#modalCancel");
+        if (cancelBtn) cancelBtn.onclick = closeModal;
+        const submitBtn = modalBox.querySelector("#modalSubmit");
+        if (submitBtn) submitBtn.onclick = async () => {
+            if (submitBtn.disabled) return;
             const values = {};
-            fields.forEach((f) => { values[f.id] = document.getElementById("field_" + f.id).value.trim(); });
+            fields.forEach((f) => {
+                values[f.id] = getters[f.id] ? getters[f.id]() : document.getElementById("field_" + f.id).value.trim();
+            });
+            submitBtn.disabled = true;
             try {
                 await onSubmit(values);
                 closeModal();
             } catch (err) {
-                modalBox.querySelector("#modalError").textContent = err.message;
+                const box = modalBox.querySelector("#modalError");
+                if (box) box.textContent = err.message;
+                submitBtn.disabled = false;
             }
         };
+        // Enter submits from a text box; focus starts on the first field.
+        modalBox.querySelectorAll(".field input:not([type=checkbox])").forEach((el) => {
+            el.addEventListener("keydown", (e) => { if (e.key === "Enter" && submitBtn) { e.preventDefault(); submitBtn.click(); } });
+        });
+        const firstField = modalBox.querySelector(".field input, .field select");
+        if (firstField && !isMobile()) firstField.focus();
     }
 
     function closeModal() {
         modalOverlay.classList.remove("visible");
         modalBox.innerHTML = "";
+        if (modalReturnFocus && modalReturnFocus.focus && document.contains(modalReturnFocus)) {
+            try { modalReturnFocus.focus({ preventScroll: true }); } catch (e) {}
+        }
+        modalReturnFocus = null;
     }
 
     modalOverlay.addEventListener("click", (e) => { if (e.target === modalOverlay) closeModal(); });
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && modalOverlay.classList.contains("visible") && !dlgOverlay.classList.contains("visible")) closeModal();
+    });
+
+    // ============================================================
+    // Confirm / message dialogs (these replace the browser's own popups)
+    // Centered card on desktop, bottom sheet on phones. Escape or tapping outside cancels.
+    // ============================================================
+    const dlgOverlay = document.getElementById("dlgOverlay");
+    const dlgBox = document.getElementById("dlgBox");
+    let dlgResolve = null;
+    let dlgReturnFocus = null;
+
+    function showDialog({ title, message, okLabel, cancelLabel, danger, icon }) {
+        return new Promise((resolve) => {
+            if (dlgResolve) dlgResolve(false);
+            dlgReturnFocus = document.activeElement;
+            dlgBox.className = "dlg" + (danger ? " danger" : "");
+            dlgBox.innerHTML = `
+                <div class="dlg-icon">${iconSvg(icon || (danger ? "warn" : "question"))}</div>
+                <h3 id="dlgTitle">${escapeHtml(title)}</h3>
+                <p id="dlgMsg">${escapeHtml(message || "")}</p>
+                <div class="dlg-actions">
+                    ${cancelLabel ? `<button type="button" class="btn btn-secondary" id="dlgCancel">${escapeHtml(cancelLabel)}</button>` : ""}
+                    <button type="button" class="btn ${danger ? "btn-danger-solid" : "btn-primary"}" id="dlgOk">${escapeHtml(okLabel || "OK")}</button>
+                </div>`;
+            dlgResolve = resolve;
+            dlgBox.querySelector("#dlgOk").onclick = () => closeDialog(true);
+            const cancel = dlgBox.querySelector("#dlgCancel");
+            if (cancel) cancel.onclick = () => closeDialog(false);
+            dlgOverlay.classList.add("visible");
+            // For anything destructive the safe button gets focus, so a stray Enter can't delete things.
+            (danger && cancel ? cancel : dlgBox.querySelector("#dlgOk")).focus();
+        });
+    }
+    function closeDialog(result) {
+        const r = dlgResolve;
+        dlgResolve = null;
+        dlgOverlay.classList.remove("visible");
+        if (dlgReturnFocus && dlgReturnFocus.focus && document.contains(dlgReturnFocus)) {
+            try { dlgReturnFocus.focus({ preventScroll: true }); } catch (e) {}
+        }
+        dlgReturnFocus = null;
+        if (r) r(result);
+    }
+    dlgOverlay.addEventListener("click", (e) => { if (e.target === dlgOverlay) closeDialog(false); });
+    document.addEventListener("keydown", (e) => {
+        if (!dlgOverlay.classList.contains("visible")) return;
+        if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeDialog(false); return; }
+        if (e.key === "Tab") {   // keep keyboard focus inside the dialog
+            const buttons = Array.from(dlgBox.querySelectorAll("button"));
+            const i = buttons.indexOf(document.activeElement);
+            e.preventDefault();
+            buttons[(i + (e.shiftKey ? buttons.length - 1 : 1)) % buttons.length].focus();
+        }
+    }, true);
+
+    function confirmDialog({ title, message, confirmLabel, cancelLabel, danger }) {
+        return showDialog({ title, message, okLabel: confirmLabel || "Confirm", cancelLabel: cancelLabel || "Cancel", danger });
+    }
+    function alertDialog({ title, message, okLabel }) {
+        return showDialog({ title: title || "Something went wrong", message, okLabel: okLabel || "OK", icon: "warn", danger: true });
+    }
+    // Errors from a button press: offline blips get a quiet toast, real refusals ("you can't do that") get a dialog.
+    function reportError(err, title) {
+        if (err && err.offline) { showToast(err.message); return Promise.resolve(); }
+        return alertDialog({ title, message: err && err.message ? err.message : "Please try again." });
+    }
 
     // ============================================================
     // Notifications
     // ============================================================
     const bellBtn = document.getElementById("bellBtn");
+    const mobileBellBtn = document.getElementById("mobileBellBtn");
     const bellBadge = document.getElementById("bellBadge");
+    const mobileBellBadge = document.getElementById("mobileBellBadge");
+    const bellTriggers = [bellBtn, mobileBellBtn].filter(Boolean);
     const notifPanel = document.createElement("div");
     notifPanel.id = "notifPanel";
     notifPanel.className = "notif-panel";
@@ -1793,12 +2643,15 @@
         const data = await call("get_notifications");
         notifications = data.notifications;
         const pendingCount = notifications.filter((n) => n.status === "pending").length;
-        if (pendingCount > 0) {
-            bellBadge.style.display = "flex";
-            bellBadge.textContent = pendingCount > 9 ? "9+" : String(pendingCount);
-        } else {
-            bellBadge.style.display = "none";
-        }
+        [bellBadge, mobileBellBadge, document.getElementById("navBellBadge")].forEach((badge) => {
+            if (!badge) return;
+            if (pendingCount > 0) {
+                badge.style.display = "flex";
+                badge.textContent = pendingCount > 9 ? "9+" : String(pendingCount);
+            } else {
+                badge.style.display = "none";
+            }
+        });
         if (notifPanel.classList.contains("visible")) renderNotifPanel();
     }
 
@@ -1824,6 +2677,7 @@
         notifList.innerHTML = notifications.map((n) => `
             <div class="notif-item" data-id="${n.id}">
                 <div class="notif-text">${notifText(n)}</div>
+                ${n.status === "pending" && n.access ? `<div class="notif-access">You'd get: ${escapeHtml(describeAccess(n.access.role, n.access.perms, n.type === "project_invite" ? "project" : "list"))}</div>` : ""}
                 <div class="notif-time">${relativeTime(n.created_at)}</div>
                 ${n.status === "pending" ? `
                     <div class="notif-actions">
@@ -1848,28 +2702,33 @@
             await refreshNotifications();
             showToast(accept ? "Invite accepted" : "Invite denied");
         } catch (err) {
-            showToast(err.message);
+            reportError(err, "Couldn't answer that invite");
         }
     }
 
     function positionNotifPanel(force = false) {
         if (!force && !notifPanel.classList.contains("visible")) return;
 
+        const anchor = window.innerWidth <= 768 && mobileBellBtn ? mobileBellBtn : bellBtn;
         if (window.innerWidth <= 768) {
+            const rect = anchor.getBoundingClientRect();
+            const pad = 12;
+            const panelWidth = Math.min(notifPanel.offsetWidth || 300, window.innerWidth - pad * 2);
+            const panelHeight = Math.min(notifPanel.offsetHeight || 300, window.innerHeight - pad * 2);
+            const left = Math.max(pad, Math.min(rect.right - panelWidth, window.innerWidth - panelWidth - pad));
+            const top = Math.min(Math.max(pad + 8, rect.bottom + 10), window.innerHeight - panelHeight - pad);
             notifPanel.style.position = "fixed";
-            const rect = bellBtn.getBoundingClientRect();
-            const mobileTop = Math.max(rect.bottom + 8, 56);
-            notifPanel.style.left = "10px";
-            notifPanel.style.right = "10px";
-            notifPanel.style.top = `${mobileTop}px`;
-            notifPanel.style.width = "auto";
+            notifPanel.style.left = `${left}px`;
+            notifPanel.style.right = "auto";
+            notifPanel.style.top = `${top}px`;
+            notifPanel.style.bottom = "auto";
+            notifPanel.style.width = `${panelWidth}px`;
             notifPanel.style.maxWidth = "none";
             notifPanel.style.minWidth = "0";
-            notifPanel.style.bottom = "auto";
             return;
         }
 
-        const rect = bellBtn.getBoundingClientRect();
+        const rect = anchor.getBoundingClientRect();
         const pad = 12;
         const panelWidth = Math.min(notifPanel.offsetWidth || 320, window.innerWidth - pad * 2);
         const panelHeight = Math.min(notifPanel.offsetHeight || 300, window.innerHeight - pad * 2);
@@ -1887,8 +2746,7 @@
         notifPanel.style.bottom = "auto";
     }
 
-    bellBtn.addEventListener("click", async (e) => {
-        e.stopPropagation();
+    async function toggleNotifPanel() {
         const willOpen = !notifPanel.classList.contains("visible");
         if (willOpen) {
             renderNotifPanel();
@@ -1899,10 +2757,86 @@
         } else {
             notifPanel.classList.remove("visible");
         }
+    }
+    bellTriggers.forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            toggleNotifPanel().catch(() => {});
+        });
     });
     document.addEventListener("click", (e) => {
-        if (!notifPanel.contains(e.target) && e.target !== bellBtn) notifPanel.classList.remove("visible");
+        const clickedBell = bellTriggers.some((btn) => btn === e.target || btn.contains(e.target));
+        if (!notifPanel.contains(e.target) && !clickedBell && !e.target.closest('[data-nav="alerts"]')) notifPanel.classList.remove("visible");
     });
+
+    // ============================================================
+    // Phone bottom bar
+    // Lists opens the sidebar as a sheet; My Tasks and Calendar switch pages; Alerts shows notifications;
+    // Account opens a small window with Settings, dark mode and Log out.
+    // ============================================================
+    document.querySelectorAll("#bottomNav .nav-ico").forEach((el) => {
+        el.insertAdjacentHTML("afterbegin", iconSvg(el.dataset.icon));
+    });
+
+    function updateBottomNav() {
+        const sheetOpen = sidebarEl.classList.contains("mobile-open");
+        const map = { myTasks: "myTasks", calendar: "calendar", list: "lists", settings: "account" };
+        const active = sheetOpen ? "lists" : map[currentView];
+        document.querySelectorAll("#bottomNav [data-nav]").forEach((b) => b.classList.toggle("active", b.dataset.nav === active));
+    }
+
+    document.getElementById("bottomNav").addEventListener("click", async (e) => {
+        const btn = e.target.closest("[data-nav]");
+        if (!btn) return;
+        const which = btn.dataset.nav;
+        if (which === "lists") { toggleSidebar(); return; }
+        closeSidebar();
+        try {
+            if (which === "alerts") await toggleNotifPanel();
+            else if (which === "myTasks") await openMyTasks();
+            else if (which === "calendar") await openCalendar();
+            else if (which === "account") openAccountSheet();
+        } catch (err) {
+            reportError(err, "Couldn't open that");
+        }
+    });
+
+    function openAccountSheet() {
+        const wrap = document.createElement("div");
+        wrap.innerHTML = `
+            <div class="acct-head">
+                ${avatarHtml(currentUser.username, 44)}
+                <div><div class="acct-name">${escapeHtml(currentUser.username)}</div><div class="acct-sub">Signed in</div></div>
+            </div>
+            <button type="button" class="acct-row" data-act="settings">${iconSvg("settings")}<span class="grow">Settings</span></button>
+            <label class="acct-row">${iconSvg("moon")}<span class="grow">Dark mode</span>
+                <span class="switch"><input type="checkbox" id="acctDarkToggle" ${document.body.classList.contains("dark") ? "checked" : ""}><span class="slider"></span></span>
+            </label>
+            <button type="button" class="acct-row danger" data-act="logout">${iconSvg("logout")}<span class="grow">Log out</span></button>`;
+        wrap.querySelector("#acctDarkToggle").addEventListener("change", (ev) => applyThemePreference(ev.target.checked));
+        wrap.addEventListener("click", async (ev) => {
+            const b = ev.target.closest("[data-act]");
+            if (!b) return;
+            closeModal();
+            if (b.dataset.act === "settings") {
+                try { await openSettings(); } catch (err) { reportError(err, "Couldn't open settings"); }
+            } else if (b.dataset.act === "logout") {
+                const ok = await confirmDialog({
+                    title: "Log out?",
+                    message: "You'll need to sign in again on this device.",
+                    confirmLabel: "Log out",
+                });
+                if (ok) document.getElementById("logoutLink").click();
+            }
+        });
+        openModal({
+            title: "Account",
+            fields: [{ id: "acct", label: "", type: "custom", build: () => ({ el: wrap, getValue: () => null }) }],
+            cancelLabel: "Close",
+            hideSubmit: true,
+            onSubmit: async () => {},
+        });
+    }
     window.addEventListener("resize", () => {
         if (notifPanel.classList.contains("visible")) positionNotifPanel();
     });
@@ -1925,13 +2859,13 @@
                 <div class="proj-header">
                     <button class="collapse-btn" data-collapse="${p.id}" title="Collapse/expand">▾</button>
                     <span class="proj-name">${escapeHtml(p.name)}</span>
-                    <span class="member-count">${p.members.length}</span>
+                    <button class="member-count" data-members-project="${p.id}" title="People and permissions" aria-label="${p.members.length} ${p.members.length === 1 ? "person" : "people"}. Open people and permissions">${iconSvg("users")} ${p.members.length}</button>
                     ${p.is_owner ? `<button class="icon-btn invite-btn" data-project="${p.id}" title="Invite a teammate">${iconSvg("userPlus")}</button>` : ""}
                     ${p.is_owner ? `<button class="icon-btn danger delete-project-btn" data-project="${p.id}" title="Delete project">${iconSvg("trash")}</button>` : ""}
                 </div>
                 <div class="proj-lists">
                     ${p.lists.map((l) => `<a href="#" class="list-link" data-list="${l.id}">${escapeHtml(l.name)}</a>`).join("")}
-                    <a href="#" class="add-list-link" data-project="${p.id}">+ Add list</a>
+                    ${(p.my_perms || []).includes("create_lists") ? `<a href="#" class="add-list-link" data-project="${p.id}">+ Add list</a>` : ""}
                 </div>
             </div>
         `).join("") || `<div class="empty-state" style="padding:10px;font-size:12.5px;">No projects yet</div>`;
@@ -1977,6 +2911,9 @@
             return;
         }
 
+        const membersBtn = e.target.closest(".member-count");
+        if (membersBtn) { e.preventDefault(); closeSidebarIfMobile(); openMembersModal("project", Number(membersBtn.dataset.membersProject)); return; }
+
         const inviteBtn = e.target.closest(".invite-btn");
         if (inviteBtn) { e.preventDefault(); closeSidebarIfMobile(); openInviteProjectModal(Number(inviteBtn.dataset.project)); return; }
 
@@ -1993,7 +2930,13 @@
     async function deleteProject(projectId) {
         const p = findProject(projectId);
         const name = p ? p.name : "this project";
-        if (!confirm(`Delete "${name}" and all of its lists/tasks? This can't be undone.`)) return;
+        const ok = await confirmDialog({
+            title: `Delete "${name}"?`,
+            message: "This permanently deletes the project, all of its lists and every task in them, for everyone on it. This can't be undone.",
+            confirmLabel: "Delete project",
+            danger: true,
+        });
+        if (!ok) return;
         try {
             await call("delete_project", { project_id: projectId });
             dashboard.projects = dashboard.projects.filter((x) => x.id !== projectId);
@@ -2004,7 +2947,7 @@
             renderSidebar();
             showToast(`"${name}" deleted`);
         } catch (err) {
-            showToast(err.message);
+            reportError(err, "Couldn't delete the project");
         }
     }
 
@@ -2032,8 +2975,10 @@
 
     function openNewListModal(projectId) {
         closeSidebarIfMobile();
+        const allowed = dashboard.projects.filter((p) => (p.my_perms || []).includes("create_lists"));
+        if (projectId && !allowed.some((p) => p.id === projectId)) projectId = null;
         const options = [{ value: "", label: "No project (standalone list)" }].concat(
-            dashboard.projects.map((p) => ({ value: String(p.id), label: p.name }))
+            allowed.map((p) => ({ value: String(p.id), label: p.name }))
         );
         openModal({
             title: "New List",
@@ -2050,7 +2995,7 @@
                     // Standalone lists aren't broadcast anywhere else, so add it here.
                     dashboard.standalone_lists.push({
                         id: data.list.id, name: data.list.name, owner_id: currentUser.id,
-                        is_owner: true, members: data.list.members,
+                        is_owner: true, members: data.list.members, my_perms: data.list.my_perms,
                     });
                     renderSidebar();
                 }
@@ -2062,14 +3007,117 @@
         });
     }
 
+    // ============================================================
+    // Access levels and permissions
+    // The server owns the list of permissions and the presets (dashboard.catalog); this just draws them.
+    // ============================================================
+    function catalog() {
+        return dashboard.catalog || { permissions: [], roles: [], default_role: "contributor" };
+    }
+    function scopePerms(scope) {
+        return catalog().permissions.filter((p) => p.scopes.includes(scope));
+    }
+    function sameSet(a, b) {
+        const x = new Set(a), y = new Set(b);
+        return x.size === y.size && [...x].every((k) => y.has(k));
+    }
+    function presetKeys(role, scope) {
+        const allowed = new Set(scopePerms(scope).map((p) => p.key));
+        return role.perms.filter((k) => allowed.has(k));
+    }
+    function roleLabel(role) {
+        if (role === "owner") return "Owner";
+        if (role === "custom") return "Custom";
+        const r = catalog().roles.find((x) => x.key === role);
+        return r ? r.label : role;
+    }
+    function describeAccess(role, perms, scope) {
+        if (role === "owner") return "Owner. Can do everything.";
+        const r = catalog().roles.find((x) => x.key === role);
+        if (r) return `${r.label}. ${r.hint}.`;
+        const labels = scopePerms(scope).filter((p) => (perms || []).includes(p.key)).map((p) => p.label.toLowerCase());
+        return labels.length ? `Custom. Can ${labels.join(", ")}.` : "Custom. View only.";
+    }
+
+    // A dropdown of presets plus a "fine-tune" checklist. Changing either keeps the other in step, and
+    // the dropdown flips to "Custom" when the ticked boxes don't match a preset.
+    function accessPicker({ scope, role, perms }) {
+        const roles = catalog().roles;
+        const list = scopePerms(scope);
+        const wrap = document.createElement("div");
+        wrap.className = "access-picker";
+
+        const sel = document.createElement("select");
+        sel.setAttribute("aria-label", "Access level");
+        roles.forEach((r) => {
+            const o = document.createElement("option");
+            o.value = r.key;
+            o.textContent = r.label;
+            sel.appendChild(o);
+        });
+        const customOpt = document.createElement("option");
+        customOpt.value = "custom";
+        customOpt.textContent = "Custom";
+        sel.appendChild(customOpt);
+        wrap.appendChild(sel);
+
+        const hint = document.createElement("div");
+        hint.className = "ap-hint";
+        wrap.appendChild(hint);
+
+        const details = document.createElement("details");
+        details.className = "ap-details";
+        details.innerHTML = `<summary>Fine-tune permissions</summary>`;
+        const boxes = {};
+        list.forEach((p) => {
+            const row = document.createElement("label");
+            row.className = "ap-check";
+            row.innerHTML = `<input type="checkbox"><span><b>${escapeHtml(p.label)}</b><small>${escapeHtml(p.hint)}</small></span>`;
+            boxes[p.key] = row.querySelector("input");
+            details.appendChild(row);
+        });
+        wrap.appendChild(details);
+
+        const checked = () => list.filter((p) => boxes[p.key].checked).map((p) => p.key);
+        const setChecks = (keys) => list.forEach((p) => { boxes[p.key].checked = keys.includes(p.key); });
+        const updateHint = () => {
+            const r = roles.find((x) => x.key === sel.value);
+            hint.textContent = r ? r.hint + "." : "Choose exactly what this person can do.";
+        };
+
+        sel.addEventListener("change", () => {
+            const r = roles.find((x) => x.key === sel.value);
+            if (r) setChecks(presetKeys(r, scope));
+            else details.open = true;
+            updateHint();
+        });
+        list.forEach((p) => boxes[p.key].addEventListener("change", () => {
+            const now = checked();
+            const match = roles.find((r) => sameSet(presetKeys(r, scope), now));
+            sel.value = match ? match.key : "custom";
+            updateHint();
+        }));
+
+        const start = role || catalog().default_role;
+        const startRole = roles.find((x) => x.key === start);
+        if (startRole) { sel.value = start; setChecks(presetKeys(startRole, scope)); }
+        else { sel.value = "custom"; setChecks(perms || []); details.open = true; }
+        updateHint();
+
+        return { el: wrap, getValue: () => ({ role: sel.value, perms: checked() }) };
+    }
+
     function openInviteProjectModal(projectId) {
         openModal({
             title: "Invite to Project",
-            fields: [{ id: "username", label: "Username", placeholder: "their account username" }],
+            fields: [
+                { id: "username", label: "Username", placeholder: "their account username" },
+                { id: "access", label: "What can they do?", type: "custom", build: () => accessPicker({ scope: "project" }) },
+            ],
             submitLabel: "Send Invite",
             onSubmit: async (v) => {
                 if (!v.username) throw new Error("Username is required");
-                await call("invite_project_member", { project_id: projectId, username: v.username });
+                await call("invite_project_member", { project_id: projectId, username: v.username, role: v.access.role, perms: v.access.perms });
                 showToast(`Invite sent to ${v.username}`);
             },
         });
@@ -2078,18 +3126,109 @@
     function openShareListModal(listId) {
         openModal({
             title: "Share List",
-            fields: [{ id: "username", label: "Username", placeholder: "their account username" }],
+            fields: [
+                { id: "username", label: "Username", placeholder: "their account username" },
+                { id: "access", label: "What can they do?", type: "custom", build: () => accessPicker({ scope: "list" }) },
+            ],
             submitLabel: "Send Invite",
             onSubmit: async (v) => {
                 if (!v.username) throw new Error("Username is required");
-                await call("share_list", { list_id: listId, username: v.username });
+                await call("share_list", { list_id: listId, username: v.username, role: v.access.role, perms: v.access.perms });
                 showToast(`Invite sent to ${v.username}`);
             },
         });
     }
 
+    // Everyone on a project or a shared list, with what each person may do. The owner can change it here, any time.
+    async function openMembersModal(scope, id) {
+        try { await loadDashboard(); } catch (err) { /* fall back to what we already have */ }
+        const box = scope === "project" ? findProject(id) : findStandaloneList(id);
+        if (!box) { showToast("Couldn't load that. Please try again."); return; }
+        const canEdit = !!box.is_owner;
+        const members = box.members.slice().sort((a, b) =>
+            (b.is_owner - a.is_owner) || a.username.localeCompare(b.username));
+        const originals = new Map();
+        const pickers = new Map();
+
+        const list = document.createElement("div");
+        list.className = "people-list";
+        members.forEach((m) => {
+            const row = document.createElement("div");
+            row.className = "person-row";
+            const tag = m.is_owner ? "Owner" : (m.id === currentUser.id ? "You" : "");
+            row.innerHTML = `<div class="person-head">${avatarHtml(m.username, 30)}<span class="person-name">${escapeHtml(m.username)}</span>${tag ? `<span class="person-tag">${tag}</span>` : ""}</div>`;
+            if (m.is_owner) {
+                row.insertAdjacentHTML("beforeend", `<div class="person-access">Full control</div>`);
+            } else if (canEdit) {
+                originals.set(m.id, m.perms || []);
+                const picker = accessPicker({ scope, role: m.role, perms: m.perms });
+                pickers.set(m.id, picker);
+                row.appendChild(picker.el);
+            } else {
+                row.insertAdjacentHTML("beforeend", `<div class="person-access">${escapeHtml(describeAccess(m.role, m.perms, scope))}</div>`);
+            }
+            list.appendChild(row);
+        });
+
+        const me = members.find((m) => m.id === currentUser.id);
+        let intro;
+        if (canEdit) {
+            intro = members.length > 1
+                ? `Choose what each person can do.${scope === "project" ? " This applies to every list in the project." : ""}`
+                : "Nobody else is here yet. Invite someone, then you can set what they're allowed to do.";
+        } else {
+            intro = me ? `Your access: ${describeAccess(me.role, me.perms, scope)}` : "";
+        }
+
+        openModal({
+            title: scope === "project" ? `People in "${box.name}"` : `People on "${box.name}"`,
+            intro,
+            wide: true,
+            fields: [{ id: "people", label: "", type: "custom", build: () => ({ el: list, getValue: () => null }) }],
+            submitLabel: "Save changes",
+            cancelLabel: canEdit && pickers.size ? "Cancel" : "Close",
+            hideSubmit: !(canEdit && pickers.size),
+            onSubmit: async () => {
+                const changes = [];
+                pickers.forEach((picker, uid) => {
+                    const v = picker.getValue();
+                    if (!sameSet(v.perms, originals.get(uid))) changes.push({ user_id: uid, role: v.role, perms: v.perms });
+                });
+                if (!changes.length) return;
+                await call("set_member_permissions", scope === "project"
+                    ? { project_id: id, members: changes }
+                    : { list_id: id, members: changes });
+                await refreshAccess();
+                showToast("Permissions updated");
+            },
+        });
+    }
+
+    // Reload the dashboard and the open list, and say so if the person's own access just changed.
+    let accessRefreshTimer = null;
+    function scheduleAccessRefresh() {
+        clearTimeout(accessRefreshTimer);
+        accessRefreshTimer = setTimeout(() => refreshAccess(true).catch(() => {}), 150);
+    }
+    async function refreshAccess(announce) {
+        const before = currentList ? (currentList.my_perms || []).join(",") : null;
+        await loadDashboard();
+        if (currentList && currentView === "list") {
+            await openList(currentList.id);
+            if (announce && before !== null && before !== (currentList.my_perms || []).join(",")) {
+                showToast("Your permissions on this list were updated");
+            }
+        }
+    }
+
     async function leaveList(listId, listName) {
-        if (!confirm(`Leave "${listName}"? You'll lose access unless someone re-shares it with you.`)) return;
+        const ok = await confirmDialog({
+            title: `Leave "${listName}"?`,
+            message: "You'll lose access to this list unless someone shares it with you again. Tasks assigned to you will become unassigned.",
+            confirmLabel: "Leave list",
+            danger: true,
+        });
+        if (!ok) return;
         try {
             await call("leave_list", { list_id: listId });
             dashboard.standalone_lists = dashboard.standalone_lists.filter((l) => l.id !== listId);
@@ -2098,7 +3237,7 @@
             renderSidebar();
             showToast(`Left "${listName}"`);
         } catch (err) {
-            showToast(err.message);
+            reportError(err, "Couldn't leave the list");
         }
     }
 
@@ -2123,7 +3262,7 @@
             return `
             <div class="mytask-row" data-list="${t.list_id}">
                 <span class="priority-dot priority-${t.priority}"></span>
-                <span style="flex:1;">${escapeHtml(t.name)}</span>
+                <span class="mytask-name">${escapeHtml(t.name)}</span>
                 <span class="mytask-list-tag">${escapeHtml(t.list_name)}</span>
                 ${d ? `<span class="deadline-badge ${d.overdue ? "overdue" : ""} ${d.label === "Today" ? "dueToday" : ""}">${escapeHtml(d.label)}</span>` : ""}
                 ${repeatBadgeHtml(t)}
@@ -2174,6 +3313,145 @@
     });
     document.getElementById("calLinkBtn").addEventListener("click", () => openSettings("settingsCalendarCard"));
 
+    function tasksForDateInCalendar(dateStr) {
+        const list = [];
+        const seen = new Set();
+        const entries = window.__calendarTasksByDate?.[dateStr] || [];
+        entries.forEach(({ t }) => {
+            if (!t || seen.has(t.id)) return;
+            seen.add(t.id);
+            list.push(t);
+        });
+        if (list.length) return list;
+        calendarTasks.forEach((t) => {
+            if ((t.deadline === dateStr || (t.future_dates || []).includes(dateStr)) && !seen.has(t.id)) {
+                seen.add(t.id);
+                list.push(t);
+            }
+        });
+        return list;
+    }
+
+    function relativeDayLabel(dateStr) {
+        const a = new Date(`${dateStr}T00:00:00`);
+        const b = new Date(`${todayStr()}T00:00:00`);
+        const diff = Math.round((a - b) / 86400000);
+        if (diff === 0) return "Today";
+        if (diff === 1) return "Tomorrow";
+        if (diff === -1) return "Yesterday";
+        return diff > 0 ? `In ${diff} days` : `${-diff} days ago`;
+    }
+
+    function sortedDayTasks(dateStr) {
+        return tasksForDateInCalendar(dateStr).slice().sort((a, b) => {
+            if (!!a.completed !== !!b.completed) return a.completed ? 1 : -1;
+            const ta = a.deadline_time || "", tb = b.deadline_time || "";
+            if (ta !== tb) return ta.localeCompare(tb);          // all-day first, then by time
+            return (PRIORITY_RANK[a.priority] ?? 1) - (PRIORITY_RANK[b.priority] ?? 1);
+        });
+    }
+
+    function dayItemHtml(t, dateStr) {
+        const isFirst = t.deadline === dateStr;
+        const pills = [];
+        pills.push(`<span class="day-pill time">${t.deadline_time ? escapeHtml(formatClock(t.deadline_time)) : "All day"}</span>`);
+        if (isFirst && isOverdue(t.deadline, t.deadline_time, t.completed)) pills.push(`<span class="day-pill overdue">Overdue</span>`);
+        if (!isFirst) pills.push(`<span class="day-pill upcoming">Upcoming repeat</span>`);
+        if (t.list_name) pills.push(`<span class="day-pill" title="List">${escapeHtml(t.list_name)}</span>`);
+        if (t.assignee) pills.push(`<span class="assignee-chip">${avatarHtml(t.assignee.username, 18)}${escapeHtml(t.assignee.username)}</span>`);
+        if (t.repeat) pills.push(`<span class="repeat-badge" title="Repeats: ${escapeHtml(t.repeat)}">${iconSvg("repeat")} ${escapeHtml(t.repeat)}</span>`);
+        return `
+            <button type="button" class="day-item p-${t.priority || "normal"} ${t.completed ? "done" : ""}" data-list="${t.list_id}" data-task="${t.id}">
+                <span class="day-item-bar"></span>
+                <span class="day-item-main">
+                    <span class="day-item-name">${escapeHtml(t.name)}</span>
+                    <span class="day-item-meta">${pills.join("")}</span>
+                </span>
+                <span class="day-item-go" aria-hidden="true">›</span>
+            </button>`;
+    }
+
+    function openCalendarDayModal(dateStr) {
+        let current = dateStr;
+        let busy = false;
+        const wrap = document.createElement("div");
+        wrap.innerHTML = `
+            <div class="day-nav">
+                <button type="button" class="btn btn-secondary" data-step="-1" aria-label="Previous day">‹</button>
+                <div class="day-sum" id="daySum" aria-live="polite"></div>
+                <button type="button" class="btn btn-secondary" data-step="1" aria-label="Next day">›</button>
+            </div>
+            <div class="day-list" id="dayList"></div>`;
+        const sumEl = wrap.querySelector("#daySum");
+        const listEl = wrap.querySelector("#dayList");
+
+        function render() {
+            const date = new Date(`${current}T00:00:00`);
+            const titleEl = document.getElementById("modalTitle");
+            if (titleEl) titleEl.textContent = date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+            const tasks = sortedDayTasks(current);
+            const done = tasks.filter((t) => t.completed).length;
+            const rel = relativeDayLabel(current);
+            const summary = !tasks.length ? "Nothing scheduled"
+                : `${tasks.length} ${tasks.length === 1 ? "task" : "tasks"}${done ? ` · ${done} done` : ""}`;
+            sumEl.innerHTML = `<span class="day-rel ${rel === "Today" ? "is-today" : ""}">${escapeHtml(rel)}</span><b>${escapeHtml(summary)}</b>`;
+            listEl.innerHTML = tasks.length
+                ? tasks.map((t) => dayItemHtml(t, current)).join("")
+                : `<div class="day-empty"><b>Nothing due ${iconSvg("sparkles")}</b>Enjoy the free day.</div>`;
+        }
+
+        async function step(delta) {
+            if (busy) return;
+            const d = new Date(`${current}T00:00:00`);
+            d.setDate(d.getDate() + delta);
+            const next = dateToStr(d);
+            busy = true;
+            try {
+                // Tasks are only loaded for the month on screen, so crossing a month boundary loads the new month first.
+                if (d.getMonth() !== calViewDate.getMonth() || d.getFullYear() !== calViewDate.getFullYear()) {
+                    calViewDate = new Date(d.getFullYear(), d.getMonth(), 1);
+                    await loadCalendar();
+                }
+                current = next;
+                render();
+            } catch (err) {
+                reportError(err, "Couldn't load that day");
+            } finally {
+                busy = false;
+            }
+        }
+
+        wrap.addEventListener("click", async (e) => {
+            const nav = e.target.closest("[data-step]");
+            if (nav) { step(Number(nav.dataset.step)); return; }
+            const item = e.target.closest(".day-item");
+            if (item) {
+                closeModal();
+                try { await openList(Number(item.dataset.list)); } catch (err) { reportError(err, "Couldn't open that list"); }
+            }
+        });
+
+        // Swipe left/right inside the sheet to move between days.
+        let sx = 0, sy = 0;
+        wrap.addEventListener("touchstart", (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+        wrap.addEventListener("touchend", (e) => {
+            const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+            if (Math.abs(dx) > 60 && Math.abs(dy) < 40) step(dx < 0 ? 1 : -1);
+        }, { passive: true });
+
+        openModal({
+            title: " ",
+            wide: true,
+            fields: [{ id: "calendarDay", label: "", type: "custom", build: () => ({ el: wrap, getValue: () => null }) }],
+            cancelLabel: "Close",
+            hideSubmit: true,
+            onSubmit: async () => {},
+        });
+        render();
+    }
+
+    let calLastCompact = null;
+
     function renderCalendar() {
         const year = calViewDate.getFullYear();
         const month = calViewDate.getMonth();
@@ -2188,24 +3466,44 @@
         const tasksByDate = {};
         calendarTasks.forEach((t) => {
             (tasksByDate[t.deadline] = tasksByDate[t.deadline] || []).push({ t, future: false });
-            // Later occurrences of a repeating task, drawn on every day it will come up.
             (t.future_dates || []).forEach((d) => {
                 (tasksByDate[d] = tasksByDate[d] || []).push({ t, future: true });
             });
         });
+        window.__calendarTasksByDate = tasksByDate;
 
         const allDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
         const weekdayLabels = allDays.slice(weekStart).concat(allDays.slice(0, weekStart));
-        let html = weekdayLabels.map((d) => `<div class="calendar-weekday">${d}</div>`).join("");
+        const compactMode = window.innerWidth <= 768;
+        calLastCompact = compactMode;
+        const today = todayStr();
+        let html = weekdayLabels.map((d) => `<div class="calendar-weekday">${compactMode ? d.slice(0, 3) : d}</div>`).join("");
 
         for (let i = 0; i < startOffset; i++) html += `<div class="calendar-cell empty"></div>`;
 
         for (let day = 1; day <= daysInMonth; day++) {
             const dateStr = `${year}-${pad2(month + 1)}-${pad2(day)}`;
             const dayTasks = tasksByDate[dateStr] || [];
-            const isToday = dateStr === todayStr();
+            const isToday = dateStr === today;
+            const cls = `${isToday ? "today" : ""} ${dateStr < today ? "past" : ""} ${dayTasks.length ? "has-tasks" : ""}`;
+            if (compactMode) {
+                // Phones: day number plus up to 3 priority-coloured dots and a "+N"; tapping opens the day sheet.
+                const dots = dayTasks.slice().sort((a, b) =>
+                    (!!a.t.completed - !!b.t.completed) || ((PRIORITY_RANK[a.t.priority] ?? 1) - (PRIORITY_RANK[b.t.priority] ?? 1)));
+                const shown = dots.slice(0, 3);
+                const extra = dots.length - shown.length;
+                html += `
+                <div class="calendar-cell ${cls}" data-date="${dateStr}" role="button" tabindex="0" aria-label="${dayTasks.length} tasks on ${dateStr}">
+                    <div class="calendar-daynum">${day}</div>
+                    <div class="calendar-dots">
+                        ${shown.map(({ t, future }) => `<i class="cal-dot p-${t.priority || "normal"} ${t.completed ? "done" : ""} ${future ? "future" : ""}"></i>`).join("")}
+                        ${extra > 0 ? `<span class="cal-count">+${extra}</span>` : ""}
+                    </div>
+                </div>`;
+                continue;
+            }
             html += `
-            <div class="calendar-cell ${isToday ? "today" : ""}" data-date="${dateStr}">
+            <div class="calendar-cell ${cls}" data-date="${dateStr}">
                 <div class="calendar-daynum">${day}</div>
                 <div class="calendar-tasks">
                     ${dayTasks.slice(0, 3).map(({ t, future }) => `
@@ -2220,10 +3518,38 @@
         }
 
         document.getElementById("calendarGrid").innerHTML = html;
+        document.querySelectorAll(".calendar-cell:not(.empty)").forEach((cell) => {
+            cell.addEventListener("click", (e) => {
+                if (e.target.closest(".calendar-task-chip")) return;
+                openCalendarDayModal(cell.dataset.date);
+            });
+            cell.addEventListener("keydown", (e) => {
+                if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openCalendarDayModal(cell.dataset.date); }
+            });
+        });
         document.querySelectorAll(".calendar-task-chip").forEach((chip) => {
-            chip.addEventListener("click", () => openList(Number(chip.dataset.list)));
+            chip.addEventListener("click", (e) => {
+                e.stopPropagation();
+                openList(Number(chip.dataset.list));
+            });
         });
     }
+
+    // Phones: swipe the month grid left/right to change month.
+    (function () {
+        const grid = document.getElementById("calendarGrid");
+        let sx = 0, sy = 0;
+        grid.addEventListener("touchstart", (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+        grid.addEventListener("touchend", (e) => {
+            const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+            if (Math.abs(dx) < 70 || Math.abs(dy) > 45) return;
+            document.getElementById(dx < 0 ? "calNextBtn" : "calPrevBtn").click();
+        }, { passive: true });
+    })();
+    // Re-draw when crossing the phone/desktop breakpoint (rotating, resizing).
+    window.addEventListener("resize", () => {
+        if (currentView === "calendar" && calLastCompact !== null && calLastCompact !== (window.innerWidth <= 768)) renderCalendar();
+    });
 
     // ============================================================
     // List view
@@ -2235,7 +3561,28 @@
         document.querySelectorAll(`.list-link[data-list="${listId}"]`).forEach((a) => a.classList.add("active"));
         renderListHeader();
         renderAssigneeOptions();
+        applyAccessToListUi();
         renderTasks();
+    }
+
+    // What the person may do in the open list (the server sends the keys, and re-checks every action itself).
+    function can(perm) {
+        return !!(currentList && currentList.my_perms && currentList.my_perms.includes(perm));
+    }
+    function myRoleHere() {
+        const me = currentList && currentList.members.find((m) => m.id === currentUser.id);
+        return me ? me.role : "viewer";
+    }
+    function applyAccessToListUi() {
+        const canAdd = can("add_tasks");
+        document.getElementById("addTaskBar").style.display = canAdd ? "" : "none";
+        document.getElementById("newTaskAssignee").style.display = can("assign_tasks") ? "" : "none";
+        const note = document.getElementById("accessNote");
+        if (canAdd) { note.style.display = "none"; return; }
+        const scope = currentList.project ? "project" : "list";
+        const me = currentList.members.find((m) => m.id === currentUser.id);
+        note.style.display = "";
+        note.textContent = `You can't add tasks here. Your access: ${me ? describeAccess(me.role, me.perms, scope) : "view only."}`;
     }
 
     function renderListHeader() {
@@ -2243,7 +3590,11 @@
         document.getElementById("listBreadcrumb").textContent = currentList.project
             ? `Project: ${currentList.project.name}`
             : "Standalone list";
-        document.getElementById("listMembers").innerHTML = currentList.members.map((m) => avatarHtml(m.username, 30)).join("");
+        const membersRow = document.getElementById("listMembers");
+        membersRow.innerHTML = currentList.members.map((m) => avatarHtml(m.username, 30)).join("");
+        membersRow.classList.add("clickable");
+        membersRow.title = "See who has access";
+        membersRow.onclick = openPeopleForCurrentList;
 
         const actions = document.getElementById("listHeaderActions");
         const sortBy = getSortPref(currentList.id);
@@ -2261,12 +3612,14 @@
                 </div>
             </div>
         `;
+        html += `<button class="btn btn-secondary btn-small" id="peopleBtn">People</button>`;
         if (currentList.is_owner && !currentList.project) {
             html += `<button class="btn btn-secondary btn-small" id="shareListBtn">Share</button>`;
         }
-        if (currentList.is_owner) {
+        // The list's creator can delete it, and so can the owner of the project it belongs to.
+        if (currentList.can_delete) {
             html += `<button class="btn btn-danger btn-small" id="deleteListBtn">Delete List</button>`;
-        } else if (!currentList.project) {
+        } else if (!currentList.is_owner && !currentList.project) {
             html += `<button class="btn btn-danger btn-small" id="leaveListBtn">Leave List</button>`;
         }
         actions.innerHTML = html;
@@ -2286,6 +3639,9 @@
             });
         });
 
+        const peopleBtn = document.getElementById("peopleBtn");
+        if (peopleBtn) peopleBtn.onclick = openPeopleForCurrentList;
+
         const shareBtn = document.getElementById("shareListBtn");
         if (shareBtn) shareBtn.onclick = () => openShareListModal(currentList.id);
 
@@ -2294,13 +3650,34 @@
 
         const deleteBtn = document.getElementById("deleteListBtn");
         if (deleteBtn) deleteBtn.onclick = async () => {
-            if (!confirm(`Delete "${currentList.name}"? This can't be undone.`)) return;
-            await call("delete_list", { list_id: currentList.id });
-            removeListFromDashboard(currentList.id);
-            currentList = null;
-            switchView("welcome");
-            renderSidebar();
+            const list = currentList;
+            const creator = list.members.find((m) => m.id === list.owner_id);
+            const others = !list.is_owner && creator ? ` It was created by ${creator.username}.` : "";
+            const ok = await confirmDialog({
+                title: `Delete "${list.name}"?`,
+                message: `This permanently deletes the list and all of its tasks, for everyone who can see it.${others} This can't be undone.`,
+                confirmLabel: "Delete list",
+                danger: true,
+            });
+            if (!ok) return;
+            try {
+                await call("delete_list", { list_id: list.id });
+                removeListFromDashboard(list.id);
+                if (currentList && currentList.id === list.id) {
+                    currentList = null;
+                    switchView("welcome");
+                }
+                renderSidebar();
+            } catch (err) {
+                reportError(err, "Couldn't delete the list");
+            }
         };
+    }
+
+    function openPeopleForCurrentList() {
+        if (!currentList) return;
+        if (currentList.project) openMembersModal("project", currentList.project.id);
+        else openMembersModal("list", currentList.id);
     }
 
     document.addEventListener("click", (e) => {
@@ -2342,32 +3719,36 @@
                         showToast("That was the last one. This repeat has ended.");
                     }
                 } catch (err) {
-                    showToast(err.message);
                     renderTasks();
+                    reportError(err, "Couldn't update the task");
                 }
             });
         });
         listEl.querySelectorAll(".task-delete").forEach((btn) => {
-            btn.addEventListener("click", () => call("delete_task", { task_id: Number(btn.dataset.task) }));
+            btn.addEventListener("click", async () => {
+                try { await call("delete_task", { task_id: Number(btn.dataset.task) }); }
+                catch (err) { reportError(err, "Couldn't delete the task"); }
+            });
         });
-        listEl.querySelectorAll(".task-name").forEach((el) => {
+        listEl.querySelectorAll(".task-name:not(.readonly)").forEach((el) => {
             el.addEventListener("click", () => openEditTaskModal(Number(el.dataset.task)));
         });
     }
 
     function renderTaskItem(t) {
         const d = formatDeadline(t.deadline, t.deadline_time, t.completed);
+        const meta =
+            (d ? `<span class="deadline-badge ${d.overdue ? "overdue" : ""} ${d.label === "Today" ? "dueToday" : ""}">${escapeHtml(d.label)}</span>` : "") +
+            repeatBadgeHtml(t) +
+            (t.assignee ? `<span class="assignee-chip">${avatarHtml(t.assignee.username, 18)}${escapeHtml(t.assignee.username)}</span>` : "");
+        const editable = can("edit_tasks") || can("assign_tasks");
         return `
-            <li class="task-item ${t.completed ? "completed" : ""}" data-task="${t.id}">
-                <input type="checkbox" class="task-checkbox" data-task="${t.id}" ${t.completed ? "checked" : ""}>
+            <li class="task-item prio-${t.priority} ${t.completed ? "completed" : ""}" data-task="${t.id}">
+                <input type="checkbox" class="task-checkbox" data-task="${t.id}" ${t.completed ? "checked" : ""} ${can("complete_tasks") ? "" : "disabled"} aria-label="Done">
                 <span class="priority-dot priority-${t.priority}"></span>
-                <span class="task-name" data-task="${t.id}">${escapeHtml(t.name)}</span>
-                ${d ? `<span class="deadline-badge ${d.overdue ? "overdue" : ""} ${d.label === "Today" ? "dueToday" : ""}">${escapeHtml(d.label)}</span>` : ""}
-                ${repeatBadgeHtml(t)}
-                ${t.assignee ? `<span class="assignee-chip">${avatarHtml(t.assignee.username, 18)}${escapeHtml(t.assignee.username)}</span>` : ""}
-                <div class="task-actions">
-                    <button class="icon-btn task-delete" data-task="${t.id}" title="Delete">${iconSvg("trash")}</button>
-                </div>
+                <span class="task-name ${editable ? "" : "readonly"}" data-task="${t.id}">${escapeHtml(t.name)}</span>
+                ${meta ? `<div class="task-meta">${meta}</div>` : ""}
+                ${can("delete_tasks") ? `<div class="task-actions"><button class="icon-btn task-delete" data-task="${t.id}" title="Delete" aria-label="Delete task">${iconSvg("trash")}</button></div>` : ""}
             </li>
         `;
     }
@@ -2390,8 +3771,13 @@
             document.getElementById("newTaskRepeat").value = "";
             nameInput.focus();
         } catch (err) {
-            showToast(err.message);
+            reportError(err, "Couldn't add the task");
         }
+    });
+    document.getElementById("addOptsToggle").addEventListener("click", () => {
+        const bar = document.getElementById("addTaskBar");
+        const open = bar.classList.toggle("show-opts");
+        document.getElementById("addOptsToggle").setAttribute("aria-expanded", String(open));
     });
     document.getElementById("newTaskName").addEventListener("keydown", (e) => {
         if (e.key === "Enter") document.getElementById("addTaskBtn").click();
@@ -2400,9 +3786,12 @@
     function openEditTaskModal(taskId) {
         const task = currentList.tasks.find((t) => t.id === taskId);
         if (!task) return;
-        openModal({
-            title: "Edit Task",
-            fields: [
+        const canEdit = can("edit_tasks");
+        const canAssign = can("assign_tasks");
+        if (!canEdit && !canAssign) return;
+        const fields = [];
+        if (canEdit) {
+            fields.push(
                 { id: "name", label: "Task name", value: task.name },
                 { id: "deadline", label: "Deadline date", type: "date", value: task.deadline || "" },
                 { id: "deadline_time", label: "Deadline time (optional)", type: "time", value: task.deadline_time || "" },
@@ -2410,25 +3799,33 @@
                     options: [{ value: "low", label: "Low" }, { value: "normal", label: "Normal" }, { value: "high", label: "High" }] },
                 { id: "repeat", label: "Repeat (e.g. every mon, fri · every! 3 days)", type: "text", value: task.repeat || "",
                     placeholder: "Leave empty for no repeat" },
-                { id: "assigned_to", label: "Assigned to", type: "select",
-                    value: task.assignee ? String(task.assignee.id) : "",
-                    options: [{ value: "", label: "Unassigned" }].concat(
-                        currentList.members.map((m) => ({ value: String(m.id), label: m.username }))
-                    ) },
-            ],
+            );
+        }
+        if (canAssign) {
+            fields.push({ id: "assigned_to", label: "Assigned to", type: "select",
+                value: task.assignee ? String(task.assignee.id) : "",
+                options: [{ value: "", label: "Unassigned" }].concat(
+                    currentList.members.map((m) => ({ value: String(m.id), label: m.username }))
+                ) });
+        }
+        openModal({
+            title: canEdit ? "Edit Task" : "Assign Task",
+            fields,
             submitLabel: "Save",
             onSubmit: async (v) => {
-                if (!v.name) throw new Error("Name is required");
-                await call("edit_task", {
-                    task_id: taskId,
-                    name: v.name,
-                    deadline: v.deadline || null,
-                    deadline_time: v.deadline ? (v.deadline_time || null) : null,
-                    priority: v.priority,
-                    repeat: v.repeat || null,
-                    assigned_to: v.assigned_to ? Number(v.assigned_to) : null,
-                    today: todayStr(),
-                });
+                const payload = { task_id: taskId, today: todayStr() };
+                if (canEdit) {
+                    if (!v.name) throw new Error("Name is required");
+                    Object.assign(payload, {
+                        name: v.name,
+                        deadline: v.deadline || null,
+                        deadline_time: v.deadline ? (v.deadline_time || null) : null,
+                        priority: v.priority,
+                        repeat: v.repeat || null,
+                    });
+                }
+                if (canAssign) payload.assigned_to = v.assigned_to ? Number(v.assigned_to) : null;
+                await call("edit_task", payload);
             },
         });
     }
@@ -2765,8 +4162,13 @@
             catch (e) { input.select(); document.execCommand("copy"); }
             showToast("Link copied");
         });
-        document.getElementById("feedResetBtn").addEventListener("click", () => {
-            if (!confirm("Make a new link? The old one will stop working, so you'll need to add the new one to your calendar app.")) return;
+        document.getElementById("feedResetBtn").addEventListener("click", async () => {
+            const ok = await confirmDialog({
+                title: "Make a new calendar link?",
+                message: "The old link will stop working, so you'll need to add the new one to your calendar app.",
+                confirmLabel: "Make new link",
+            });
+            if (!ok) return;
             withBusy(null, async () => {
                 takePayload(await call("reset_calendar_link"));
                 showToast("New link made.");
@@ -2888,6 +4290,10 @@
                     switchView("welcome");
                 }
                 renderSidebar();
+                break;
+
+            case "permissions_changed":
+                scheduleAccessRefresh();
                 break;
 
             case "settings_updated":
