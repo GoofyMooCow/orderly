@@ -221,9 +221,26 @@ function xBindTaskList(listEl) {
             const id = Number(box.dataset.task);
             if (box.checked) selectedIds.add(id);
             else selectedIds.delete(id);
+            const row = box.closest(".task-item");
+            if (row) row.classList.toggle("selected", box.checked);
             xRenderBulkBar();
         });
     });
+    if (selectMode) {
+        // In select mode a tap anywhere on the row ticks it (instead of opening the task).
+        listEl.querySelectorAll(".task-item").forEach((li) => {
+            li.addEventListener("click", (e) => {
+                if (e.target.closest("button, a, input, textarea, select, .subtasks")) return;
+                const box = li.querySelector(".sel-box");
+                if (!box) return;
+                e.stopPropagation();
+                box.checked = !box.checked;
+                box.dispatchEvent(new Event("change"));
+            }, true);
+        });
+    } else if (can("edit_tasks") && getSortPref(currentList.id) === "default") {
+        listEl.querySelectorAll(".task-item:not(.completed)").forEach(xBindRowHoldDrag);
+    }
     listEl.querySelectorAll(".drag-handle").forEach((h) => {
         h.addEventListener("pointerdown", (e) => {
             const li = h.closest(".task-item");
@@ -274,7 +291,36 @@ function xOnLiveEvent(msg) {
 // Drag and drop (mouse, touch and pen, all with pointer events)
 // Rows are dragged by their grip, cards by their body. While a drag is on, redraws wait until it ends.
 // ============================================================
-const dnd = {active: null, pendingRender: false};
+const dnd = {active: null, pendingRender: false, armed: false, lastEnd: 0};
+
+// Once a row is picked up the page must not scroll under the finger (before that, scrolling works as normal).
+document.addEventListener("touchmove", (e) => {
+    if (dnd.active && e.cancelable) e.preventDefault();
+}, {passive: false});
+
+// A press-and-hold that ended in a drag shouldn't also count as a tap on whatever is under the finger.
+document.addEventListener("click", (e) => {
+    if (Date.now() - dnd.lastEnd < 450) {
+        e.stopPropagation();
+        e.preventDefault();
+    }
+}, true);
+
+// Long-press dragging for touch: the whole row is the handle (no grip on phones).
+function xBindRowHoldDrag(li) {
+    li.addEventListener("pointerdown", (e) => {
+        if (e.pointerType === "mouse" || !e.isPrimary) return;
+        if (selectMode || e.target.closest("button, a, input, textarea, select, .subtasks")) return;
+        xStartDrag(e, {
+            el: li, hold: 380, containerSel: "#taskList", itemSel: ".task-item:not(.completed)",
+            targetSel: ".list-link[data-list]", canTarget: (el) => Number(el.dataset.list) !== currentList.id && can("edit_tasks"),
+            onSort: xOnListSort, onTarget: (el) => xMoveTaskToList(Number(li.dataset.task), Number(el.dataset.list), el.textContent.trim()),
+        });
+    });
+    li.addEventListener("contextmenu", (e) => {
+        if (dnd.armed || dnd.active) e.preventDefault();
+    });
+}
 
 function xDragging() {
     return !!dnd.active;
@@ -291,10 +337,30 @@ function xScrollParent(el) {
 function xStartDrag(e, cfg) {
     if (xDragging() || (e.pointerType === "mouse" && e.button !== 0)) return;
     const pid = e.pointerId, sx = e.clientX, sy = e.clientY;
-    let started = false;
+    let started = false, holdTimer = null, lastX = sx, lastY = sy;
+    if (cfg.hold) {
+        // Press and hold: the finger has to stay put for a moment before the row picks up.
+        // Moving early means the person is scrolling, so we back off and let the page scroll.
+        dnd.armed = true;
+        holdTimer = setTimeout(() => {
+            holdTimer = null;
+            started = true;
+            dnd.armed = false;
+            if (navigator.vibrate) {
+                try { navigator.vibrate(12); } catch (err) { /* not supported, fine */ }
+            }
+            xBeginDrag({clientX: lastX, clientY: lastY}, cfg, cleanup);
+        }, cfg.hold);
+    }
     const onMove = (ev) => {
         if (ev.pointerId !== pid) return;
+        lastX = ev.clientX;
+        lastY = ev.clientY;
         if (!started) {
+            if (cfg.hold) {
+                if (Math.hypot(ev.clientX - sx, ev.clientY - sy) > 10) cleanup();
+                return;
+            }
             if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < (cfg.threshold ?? 4)) return;
             started = true;
             xBeginDrag(ev, cfg, cleanup);
@@ -312,6 +378,11 @@ function xStartDrag(e, cfg) {
         if (started && dnd.active) xEndDrag(false);
     };
     function cleanup() {
+        if (holdTimer) {
+            clearTimeout(holdTimer);
+            holdTimer = null;
+        }
+        dnd.armed = false;
         window.removeEventListener("pointermove", onMove);
         window.removeEventListener("pointerup", onUp);
         window.removeEventListener("pointercancel", onUp);
@@ -391,6 +462,7 @@ function xEndDrag(cancelled) {
     const moved = a.el.parentNode !== a.origParent || a.el.nextSibling !== a.origNext;
     const target = a.overTarget;
     dnd.active = null;
+    dnd.lastEnd = Date.now();
     if (cancelled || target) {
         a.origParent.insertBefore(a.el, a.origNext);   // put it back; the server's update redraws it properly
     }
@@ -566,14 +638,22 @@ function xRenderBulkBar() {
     });
     const n = selectedIds.size, off = n ? "" : "disabled";
     bar.style.display = "";
+    const ico = {
+        complete: '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+        reopen: '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>',
+        edit: '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></svg>',
+        delete: '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg>',
+    };
+    const act = (key, label, cls) => `<button type="button" class="bulk-act ${cls || ""}" data-bulk="${key}" ${off}>${ico[key]}<span>${label}</span></button>`;
     bar.innerHTML = `
-        <span class="bulk-count">${n ? `${n} selected` : "Select tasks"}</span>
-        <button type="button" class="btn btn-secondary btn-small" data-bulk="all">${n && n === xVisibleTaskIds().length ? "Select none" : "Select all"}</button>
-        <button type="button" class="btn btn-secondary btn-small" data-bulk="complete" ${off}>Complete</button>
-        <button type="button" class="btn btn-secondary btn-small" data-bulk="reopen" ${off}>Reopen</button>
-        <button type="button" class="btn btn-secondary btn-small" data-bulk="edit" ${off}>Change…</button>
-        <button type="button" class="btn btn-danger btn-small" data-bulk="delete" ${off}>Delete</button>
-        <button type="button" class="btn btn-primary btn-small" data-bulk="done">Done</button>`;
+        <div class="bulk-top">
+            <span class="bulk-count">${n ? `${n} selected` : "Select tasks"}</span>
+            <button type="button" class="btn btn-secondary btn-small" data-bulk="all">${n && n === xVisibleTaskIds().length ? "Select none" : "Select all"}</button>
+            <button type="button" class="btn btn-primary btn-small" data-bulk="done">Done</button>
+        </div>
+        <div class="bulk-actions">
+            ${act("complete", "Complete")}${act("reopen", "Reopen")}${act("edit", "Change")}${act("delete", "Delete", "danger")}
+        </div>`;
     bar.querySelectorAll("[data-bulk]").forEach((b) => b.addEventListener("click", () => xBulkClick(b.dataset.bulk)));
 }
 
@@ -831,8 +911,8 @@ function xOpenTaskDetail(taskId, tab = "comments") {
         </div>
         <div class="td-body" aria-live="polite"></div>
         <div class="td-composer">
-            <textarea rows="2" maxlength="2000" placeholder="Write a comment… use @name to mention someone"></textarea>
-            <button type="button" class="btn btn-primary btn-small td-send">Send</button>
+            <textarea rows="1" maxlength="2000" placeholder="Write a comment… use @name to mention someone"></textarea>
+            <button type="button" class="td-send" title="Send (Ctrl+Enter)" aria-label="Send comment"><svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></button>
         </div>`;
     root.querySelectorAll(".td-tabs button").forEach((b) => b.addEventListener("click", () => {
         detail.tab = b.dataset.tab;
@@ -840,6 +920,12 @@ function xOpenTaskDetail(taskId, tab = "comments") {
         if (detail.tab === "activity") xLoadActivity();
     }));
     const ta = root.querySelector("textarea"), send = root.querySelector(".td-send");
+    const sync = () => {
+        ta.style.height = "auto";
+        ta.style.height = Math.min(ta.scrollHeight, 130) + "px";
+        send.classList.toggle("ready", !!ta.value.trim());
+    };
+    ta.addEventListener("input", sync);
     const submit = async () => {
         const body = ta.value.trim();
         if (!body) return;
@@ -847,6 +933,7 @@ function xOpenTaskDetail(taskId, tab = "comments") {
         try {
             await call("add_comment", {task_id: taskId, body});
             ta.value = "";
+            sync();
         } catch (err) {
             showToast(err.message);
         } finally {
