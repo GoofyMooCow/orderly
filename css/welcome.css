@@ -1,0 +1,131 @@
+/* Landing page (index). Self-contained; it does not load base.css. */
+:root {
+    --bg: #f6f8fd;
+        --ink: #0d1f4a;
+    --muted: #566891;
+    --accent: #2c5bd6;
+        --line: rgba(13, 31, 74, 0.12);
+    --font: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font);
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+main { flex: 1; }
+
+a { color: inherit; }
+h1, h2, h3, p, dl, dd { margin: 0; }
+[hidden] { display: none !important; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+/* ---------- Top bar ---------- */
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1128px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 20px 24px;
+}
+.brand { display: inline-flex; align-items: center; gap: 9px; text-decoration: none; font-weight: 700; font-size: 1.1rem; letter-spacing: -0.01em; }
+.brand svg { color: var(--accent); }
+.topcta { display: flex; align-items: center; gap: 18px; }
+.link { font-size: 14.5px; color: var(--muted); text-decoration: none; }
+.link:hover { color: var(--ink); }
+
+/* ---------- Buttons ---------- */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 15px;
+    font-size: 14.5px;
+    font-weight: 600;
+    color: #fff;
+    background: #1e3a8a;
+    border-radius: 7px;
+    text-decoration: none;
+    transition: background .15s, transform .08s;
+}
+.btn:hover { background: #162d6e; }
+.btn:active { transform: scale(.985); }
+.btn-lg { padding: 12px 20px; font-size: 16px; }
+.btn:focus-visible, .link:focus-visible, .brand:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+
+/* ---------- Hero ---------- */
+.hero { padding: 96px 0 112px; }
+.hero h1 { font-size: clamp(2.4rem, 4.8vw, 3.7rem); line-height: 1.05; font-weight: 700; letter-spacing: -0.035em; margin-bottom: 22px; max-width: 13em; }
+.lead { font-size: 1.15rem; color: var(--muted); max-width: 27em; margin-bottom: 34px; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; }
+.actions .link { font-size: 15.5px; }
+
+/* ---------- Repeating tasks ---------- */
+.repeats { background: #fff; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 88px 0; }
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 440px); gap: 72px; align-items: start; }
+h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); line-height: 1.15; font-weight: 700; letter-spacing: -0.025em; }
+.split-copy h2 { margin-bottom: 20px; max-width: 14em; }
+.split-copy p { color: var(--muted); max-width: 30em; }
+.split-copy p + p { margin-top: 14px; }
+
+code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .88em;
+    padding: 2px 7px;
+    border-radius: 5px;
+    background: rgba(44, 91, 214, 0.1);
+    color: #1e3a8a;
+    white-space: nowrap;
+}
+
+.phrases { width: 100%; border-collapse: collapse; font-size: 15px; }
+.phrases th, .phrases td { text-align: left; padding: 15px 0; border-bottom: 1px solid var(--line); vertical-align: baseline; }
+.phrases thead th { font-size: 13px; font-weight: 500; color: var(--muted); padding-top: 0; }
+.phrases tbody th { font-weight: 400; padding-right: 24px; width: 48%; }
+.phrases td { color: var(--ink); }
+
+/* ---------- The rest ---------- */
+.features { padding: 88px 0; }
+.features h2 { margin-bottom: 36px; }
+.facts > div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 440px);
+    gap: 72px;
+    padding: 22px 0;
+    border-top: 1px solid var(--line);
+}
+.facts > div:last-child { border-bottom: 1px solid var(--line); }
+.facts dt { font-weight: 600; font-size: 1.02rem; }
+.facts dd { color: var(--muted); font-size: 15px; }
+
+/* ---------- Closing ---------- */
+.closing { padding: 24px 0 104px; }
+.closing-row { display: flex; align-items: center; justify-content: space-between; gap: 24px 40px; flex-wrap: wrap; }
+
+/* ---------- Footer ---------- */
+.foot {
+    max-width: 1080px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 22px 24px 32px;
+    border-top: 1px solid var(--line);
+    font-size: 13px;
+    color: var(--muted);
+}
+
+@media (max-width: 880px) {
+    .hero { padding: 40px 0 72px; }
+    .split { grid-template-columns: 1fr; gap: 44px; }
+    .repeats, .features { padding: 64px 0; }
+    .facts > div { grid-template-columns: 1fr; gap: 6px; }
+    .closing { padding-bottom: 72px; }
+}

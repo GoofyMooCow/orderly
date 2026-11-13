@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orderly</title>
+<style>:root{color-scheme:light dark}body{font-family:system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;margin:0;padding:16px;box-sizing:border-box}.c{max-width:380px;text-align:center}</style>
+</head><body><div class="c" id="out"><p>Connecting…</p></div>
+<script>
+const NGROK = "https://scaling-fidgeting-blooming.ngrok-free.dev";
+(async () => {
+  const q = new URLSearchParams(location.search);
+  const vendor = q.get("vendor") || "microsoft";
+  q.delete("vendor");
+  const out = document.getElementById("out");
+  try {
+    const r = await fetch(`${NGROK}/oauth/${vendor}/callback?${q}`, {
+      headers: { "ngrok-skip-browser-warning": "1" }
+    });
+    const doc = new DOMParser().parseFromString(await r.text(), "text/html");
+    const card = doc.querySelector(".c");
+    out.textContent = "";
+    out.append(...(card ? [...card.childNodes] : ["Something went wrong."]));
+    if (r.ok && /connected/i.test(doc.body.textContent)) setTimeout(() => window.close(), 1500);
+  } catch (e) {
+    out.textContent = "Couldn't reach Orderly: " + e.message;
+  }
+})();
+</script></body></html>

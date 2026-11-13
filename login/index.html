@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Orderly – Sign in</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+
+  <link rel="icon" href="../favicon-light.png" media="(prefers-color-scheme: light)">
+  <link rel="icon" href="../favicon-dark.png" media="(prefers-color-scheme: dark)">
+
+  <link rel="stylesheet" href="../css/login.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#1e3a8a">
+  <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+</head>
+<body>
+
+<div class="page">
+  <a class="back" href=".." id="backLink">
+    <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg> Back
+  </a>
+
+  <div class="wrap" id="authCard">
+    <a class="logo" href="..">
+      <span class="logo-mark"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+      Orderly
+    </a>
+
+    <div id="inviteSlot"></div>
+
+    <h1 id="formTitle">Welcome back</h1>
+    <p class="sub" id="formSub">Sign in to pick up where you left off.</p>
+
+    <form id="authForm" novalidate>
+      <div class="field" id="fUsername">
+        <div class="input-wrap"><input id="username" type="text" placeholder="Username" aria-label="Username" autocomplete="username" autocapitalize="none" spellcheck="false"></div>
+      </div>
+
+      <div class="field" id="fCode" hidden>
+        <div class="input-wrap"><input id="resetCode" type="text" inputmode="numeric" maxlength="12" placeholder="6-digit code from your email" aria-label="6-digit code" autocomplete="one-time-code"></div>
+      </div>
+
+      <div class="field" id="fEmail" hidden>
+        <div class="input-wrap"><input id="email" type="email" placeholder="Email (optional, for reminders)" aria-label="Email" autocomplete="email"></div>
+      </div>
+
+      <div class="field" id="fPassword">
+        <div class="input-wrap has-toggle">
+          <input id="password" type="password" placeholder="Password" aria-label="Password" autocomplete="current-password">
+          <button type="button" class="eye" data-eye="password" aria-label="Show password"></button>
+        </div>
+      </div>
+
+      <div class="field" id="fPassword2" hidden>
+        <div class="input-wrap has-toggle">
+          <input id="password2" type="password" placeholder="Verify password" aria-label="Verify password" autocomplete="new-password">
+          <button type="button" class="eye" data-eye="password2" aria-label="Show password"></button>
+        </div>
+      </div>
+
+      <p class="sub">By signing <span id="in">in</span><span id="up" hidden>up</span> you agree to the <a href="../terms">Terms</a> and <a href="../privacy">Privacy Policy</a>.</p>
+
+      <button type="submit" class="submit" id="submitBtn"><span class="spinner"></span><span id="submitLabel">Sign in</span></button>
+    </form>
+
+    <div class="message" id="message" role="status" aria-live="polite"></div>
+
+    <div class="links">
+      <div class="switch" id="switchRow"><span id="switchText">New here?</span> <button type="button" class="linkbtn" id="switchBtn">Sign up</button></div>
+      <button type="button" class="linkbtn quiet" id="forgotLink">Forgot password?</button>
+      <button type="button" class="linkbtn quiet" id="resendLink" hidden>Send a new code</button>
+      <button type="button" class="linkbtn quiet" id="backToSignin" hidden>Back to sign in</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/login.js"></script>
+
+</body>
+</html>

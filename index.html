@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>
+  (function () {
+      const signedIn = document.cookie
+          .split(";")
+          .some(cookie => cookie.trim().startsWith("authToken="));
+  
+      if (signedIn) {
+          window.location.replace("app");
+      }
+  })();
+  </script>
+  <meta charset="UTF-8">
+  <title>Orderly - Shared tasks that keep everyone in step</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Orderly is a shared to-do app with projects, lists, a calendar, and repeating tasks you type in plain English.">
+  <link rel="icon" href="./favicon-light.png" media="(prefers-color-scheme: light)">
+  <link rel="icon" href="./favicon-dark.png" media="(prefers-color-scheme: dark)">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="css/welcome.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#1e3a8a">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="login" aria-label="Orderly home">
+    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 12.5l2.8 2.8 5.7-5.8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>Orderly</span>
+  </a>
+  <div class="topcta">
+    <a class="link" href="login" data-signed-out>Sign in</a>
+    <a class="btn" href="login?mode=signup" data-signed-out>Get started</a>
+    <a class="btn" href="app" data-signed-in hidden>Open Orderly</a>
+  </div>
+</header>
+
+<main>
+
+  <section class="hero">
+    <div class="wrap hero-copy">
+      <div>
+        <h1>Shared tasks that keep everyone in step.</h1>
+        <p class="lead">Lists, projects and a calendar in one place, for the people you actually split the work with.</p>
+        <div class="actions">
+          <a class="btn btn-lg" href="login?mode=signup" data-signed-out>Create an account</a>
+          <a class="link" href="login" data-signed-out>I already have an account</a>
+          <a class="btn btn-lg" href="app" data-signed-in hidden>Open Orderly</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="repeats">
+    <div class="wrap split">
+      <div class="split-copy">
+        <h2>Say when it repeats, in plain English.</h2>
+        <p>Type the schedule straight into the task. Orderly reads it and puts every occurrence on the calendar.</p>
+        <p>Add a <code>!</code> and the next one counts from the day you finish, not the day it was due. Good for things like watering plants, where late means later.</p>
+      </div>
+      <table class="phrases">
+        <thead>
+          <tr><th scope="col">You type</th><th scope="col">It repeats</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row"><code>every mon, fri</code></th><td>Every Monday and Friday</td></tr>
+          <tr><th scope="row"><code>every 3rd friday</code></th><td>The third Friday of each month</td></tr>
+          <tr><th scope="row"><code>every! 3 days</code></th><td>Three days after you complete it</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="wrap">
+      <h2>The rest of it</h2>
+      <dl class="facts">
+        <div>
+          <dt>Projects and lists</dt>
+          <dd>Group lists into a project or keep your own. Sort by name, priority, deadline or date added.</dd>
+        </div>
+        <div>
+          <dt>My Tasks</dt>
+          <dd>Everything assigned to you, across every list, with priorities, deadlines and an overdue flag.</dd>
+        </div>
+        <div>
+          <dt>Calendar</dt>
+          <dd>See a month at a glance, or subscribe from Google Calendar, Outlook or Apple Calendar.</dd>
+        </div>
+        <div>
+          <dt>Sharing</dt>
+          <dd>Invite by username or link, then choose exactly what each person can add, edit, assign, complete or delete.</dd>
+        </div>
+        <div>
+          <dt>Reminders</dt>
+          <dd>Add an email for a morning digest, due-date nudges and assignment notes. All optional.</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="closing">
+    <div class="wrap closing-row">
+      <h2>Start with one list.</h2>
+      <div class="actions">
+        <a class="btn btn-lg" href="login?mode=signup" data-signed-out>Create an account</a>
+        <a class="btn btn-lg" href="app" data-signed-in hidden>Open Orderly</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <span>Orderly</span>
+</footer>
+
+<script src="js/welcome.js"></script>
+</body>
+</html>
