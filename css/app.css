@@ -1800,7 +1800,7 @@ body.dnd-on, body.dnd-on * { cursor: grabbing !important; user-select: none !imp
 .board-col { background: rgba(120,140,200,0.08); border-radius: 10px; padding: 10px; min-width: 0; }
 .board-col-head { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 13.5px; padding: 2px 4px 10px; }
 .board-count { font-size: 11.5px; opacity: .6; font-weight: 500; }
-.board-col-body { display: flex; flex-direction: column; gap: 8px; min-height: 60px; }
+.board-col-body { display: flex; flex-direction: column; gap: 8px; min-height: 60px; touch-action: pan-y; }
 .board-card { background: var(--bg); border: 1px solid rgba(120,140,200,0.28); border-radius: 8px; padding: 10px 12px; cursor: pointer; touch-action: pan-y; }
 .board-card.draggable { cursor: grab; }
 .board-card.completed { opacity: .6; }

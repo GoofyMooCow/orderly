@@ -322,6 +322,10 @@ function xBindRowHoldDrag(li) {
     });
 }
 
+function xIsTouchLikePointer(ev) {
+    return ev && (ev.pointerType === "touch" || ev.pointerType === "" || (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(pointer: coarse)").matches));
+}
+
 function xDragging() {
     return !!dnd.active;
 }
@@ -558,7 +562,7 @@ function renderBoard() {
             card.addEventListener("pointerdown", (e) => {
                 if (e.target.closest("button, a, input")) return;
                 xStartDrag(e, {
-                    el: card, hold: e.pointerType === "touch" ? 220 : undefined,
+                    el: card, hold: xIsTouchLikePointer(e) ? 220 : undefined,
                     containerSel: ".board-col-body", itemSel: ".board-card", threshold: e.pointerType === "mouse" ? 5 : 8,
                     targetSel: ".list-link[data-list]", canTarget: (el) => Number(el.dataset.list) !== currentList.id && can("edit_tasks"),
                     onSort: xOnBoardDrop, onTarget: (el) => xMoveTaskToList(id, Number(el.dataset.list), el.textContent.trim()),
