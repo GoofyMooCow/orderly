@@ -916,7 +916,7 @@ function xOpenTaskDetail(taskId, tab = "comments") {
         </div>
         <div class="td-body" aria-live="polite"></div>
         <div class="td-composer">
-            <textarea rows="1" maxlength="2000" placeholder="Write a comment… use @name to mention someone"></textarea>
+            <textarea rows="1" maxlength="2000" placeholder="Write a comment…"></textarea>
             <button type="button" class="td-send" title="Send (Ctrl+Enter)" aria-label="Send comment"><svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></button>
         </div>`;
     root.querySelectorAll(".td-tabs button").forEach((b) => b.addEventListener("click", () => {
